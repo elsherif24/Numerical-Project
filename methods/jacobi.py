@@ -3,7 +3,7 @@ from utils.matrixChecks import isDiagonallyDominant
 from utils.stepRecorder import copyVector
 
 
-def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None):
+def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
     if recorder.isEnabled():
         recorder.record("initial", "Initial system and guess", vectorX=copyVector(initialGuess), iteration=0, )
 
@@ -15,6 +15,8 @@ def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None)
     xNew = [D.zero() for _ in range(n)]
     iteration = 0
 
+    converged = False
+
     while iteration < maxIterations:
         iteration += 1
 
@@ -25,14 +27,21 @@ def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None)
         if recorder.isEnabled():
             recorder.record("iteration", f"Iteration {iteration}", vectorX=copyVector(xNew), iteration=iteration, )
 
-        if absRelError is not None:
-            if checkConvergence(xNew, x, n, absRelError, recorder):
-                x = xNew[:]
-                break
+        # Check convergence condition
+        if checkConvergence(xNew, x, n, absRelError, recorder):
+            x = xNew[:]
+            converged = True
+            break
 
         x = xNew[:]
 
-    return x, iteration
+    if recorder.isEnabled():
+        if converged:
+            recorder.record("convergence", "Solution converged successfully")
+        else:
+            recorder.record("convergence", f"Solution did not converge after {maxIterations} iterations", )
+
+    return x, iteration, converged
 
 
 def checkConvergence(xNew, xOld, n, threshold, recorder):

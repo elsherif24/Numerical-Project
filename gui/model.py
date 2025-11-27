@@ -23,7 +23,6 @@ class LinearSolverModel:
         self.lu_form = "Doolittle"
 
         # Iterative method parameters
-        self.stopping_condition = "Max Iterations"
         self.max_iterations = 100
         self.abs_error = 1e-6
 
@@ -37,6 +36,8 @@ class LinearSolverModel:
         self.L_matrix: Optional[np.ndarray] = None
         self.U_matrix: Optional[np.ndarray] = None
         self.iterations: Optional[int] = None
+        self.converged: Optional[bool] = (None  # None for non-iterative, True/False for iterative
+        )
         self.execution_time: Optional[float] = None
         self.steps = []
 
@@ -49,11 +50,13 @@ class LinearSolverModel:
         """Store initial guess for iterative methods"""
         self.initial_guess = x0
 
-    def set_solution(self, solution: np.ndarray, execution_time: float, iterations: Optional[int] = None, ):
+    def set_solution(self, solution: np.ndarray, execution_time: float, iterations: Optional[int] = None,
+            converged: Optional[bool] = None, ):
         """Store solution and statistics"""
         self.solution = solution
         self.execution_time = execution_time
         self.iterations = iterations
+        self.converged = converged
 
     def set_lu_matrices(self, L: np.ndarray, U: np.ndarray):
         """Store L and U matrices for LU decomposition"""
@@ -66,6 +69,7 @@ class LinearSolverModel:
         self.L_matrix = None
         self.U_matrix = None
         self.iterations = None
+        self.converged = None
         self.execution_time = None
         self.steps = []
 

@@ -26,7 +26,6 @@ class LinearSolverController:
         self.step_by_step_var = None
         self.method_var = None
         self.lu_form_var = None
-        self.stopping_condition_var = None
         self.max_iterations_var = None
         self.abs_error_var = None
 
@@ -38,7 +37,6 @@ class LinearSolverController:
         self.step_by_step_var = ctk.BooleanVar(value=self.model.step_by_step)
         self.method_var = ctk.StringVar(value=self.model.method)
         self.lu_form_var = ctk.StringVar(value=self.model.lu_form)
-        self.stopping_condition_var = ctk.StringVar(value=self.model.stopping_condition)
         self.max_iterations_var = ctk.IntVar(value=self.model.max_iterations)
         self.abs_error_var = ctk.DoubleVar(value=self.model.abs_error)
 
@@ -54,7 +52,6 @@ class LinearSolverController:
         self.model.step_by_step = self.step_by_step_var.get()
         self.model.method = self.method_var.get()
         self.model.lu_form = self.lu_form_var.get()
-        self.model.stopping_condition = self.stopping_condition_var.get()
         self.model.max_iterations = self.max_iterations_var.get()
         self.model.abs_error = self.abs_error_var.get()
 
@@ -63,10 +60,10 @@ class LinearSolverController:
         self.model.method = choice
         self.view.update_method_ui(self.model)
 
-    def on_stopping_condition_change(self, choice):
-        """Handle stopping condition change"""
-        self.model.stopping_condition = choice
-        self.view.update_stopping_condition_ui(choice)
+    def on_lu_form_change(self, choice):
+        """Handle LU form selection change"""
+        self.model.lu_form = choice
+        self.view.update_lu_form_ui(choice)
 
     def solve(self):
         """Main solve operation - uses solver_engine"""
@@ -88,7 +85,6 @@ class LinearSolverController:
         params.scaling_enabled = self.model.scaling_enabled
         params.step_by_step_mode = self.model.step_by_step
         params.lu_form = self.model.lu_form
-        params.stopping_condition = self.model.stopping_condition
         params.max_iterations = self.model.max_iterations
         params.absolute_relative_error = self.model.abs_error
 
@@ -107,7 +103,7 @@ class LinearSolverController:
         if result.error_message:
             self.view.display_error(result.error_message)
         else:
-            self.model.set_solution(result.solution, result.execution_time, result.iterations)
+            self.model.set_solution(result.solution, result.execution_time, result.iterations, result.converged, )
             if result.L_matrix is not None:
                 self.model.set_lu_matrices(result.L_matrix, result.U_matrix)
             self.model.steps = result.steps

@@ -2,12 +2,18 @@ from D import D
 
 
 def isDiagonallyDominant(a, n):
+    hasStrictInequality = False
+
     for i in range(n):
         diagonal = abs(a[i][i])
         rowSum = sum(abs(a[i][j]) for j in range(n) if j != i)
-        if diagonal <= rowSum:
+
+        if diagonal < rowSum:
             return False
-    return True
+        elif diagonal > rowSum:
+            hasStrictInequality = True
+
+    return hasStrictInequality
 
 
 def isSymmetricPositiveDefinite(a, n):

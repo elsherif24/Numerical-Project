@@ -27,10 +27,7 @@ class LinearSolverView:
         # Parameter frames
         self.lu_frame = None
         self.iterative_frame = None
-        self.max_iter_frame = None
-        self.abs_error_frame = None
         self.initial_guess_container = None
-        self.stop_input_container = None  # Container for stopping condition input
 
         # Entry storage
         self.coefficient_entries = []
@@ -38,6 +35,7 @@ class LinearSolverView:
         self.initial_guess_entries = []
 
         # Tkinter variables will be bound from outside before build_ui() is called
+        self.lu_form = None
 
     def build_ui(self):
         """Build the entire UI"""
@@ -118,6 +116,10 @@ class LinearSolverView:
 
             if model.iterations is not None:
                 self.output_text.insert("end", f"Iterations: {model.iterations}\n")
+
+                if model.converged is not None:
+                    status = ("CONVERGED" if model.converged else "DIVERGED (Max iterations reached)")
+                    self.output_text.insert("end", f"Status: {status}\n")
 
     def display_steps(self, steps):
         """Display step-by-step solution"""
@@ -239,9 +241,13 @@ class LinearSolverView:
 
         # Update scaling checkbox
         if model.get_method_requires_scaling():
-            self.scaling_checkbox.configure(state="normal")
             if model.get_method_is_lu():
                 self.lu_frame.pack(fill="x", pady=5)
+                # Update scaling based on current LU form
+                self.update_lu_form_ui(model.lu_form)
+            else:
+                # For Gauss Elimination and Gauss-Jordan, enable scaling
+                self.scaling_checkbox.configure(state="normal")
         else:
             self.scaling_checkbox.configure(state="disabled")
 
@@ -249,16 +255,12 @@ class LinearSolverView:
         if model.get_method_is_iterative():
             self.iterative_frame.pack(fill="x", pady=5)
             self.generate_initial_guess_inputs()
-            self.update_stopping_condition_ui(model.stopping_condition)
 
-    def update_stopping_condition_ui(self, condition: str):
-        """Update stopping condition UI"""
-        # Clear the container
-        for widget in self.stop_input_container.winfo_children():
-            widget.pack_forget()
-
-        # Show appropriate input
-        if condition == "Max Iterations":
-            self.max_iter_frame.pack(fill="x")
+    def update_lu_form_ui(self, lu_form: str):
+        """Update scaling checkbox based on LU form selection"""
+        if lu_form == "Doolittle":
+            # Doolittle supports scaling
+            self.scaling_checkbox.configure(state="normal")
         else:
-            self.abs_error_frame.pack(fill="x")
+            # Crout and Cholesky do not support scaling
+            self.scaling_checkbox.configure(state="disabled")

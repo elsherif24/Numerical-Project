@@ -45,7 +45,6 @@ class LinearEquationSolverApp:
         self.view.step_by_step = self.controller.step_by_step_var
         self.view.method = self.controller.method_var
         self.view.lu_form = self.controller.lu_form_var
-        self.view.stopping_condition = self.controller.stopping_condition_var
         self.view.max_iterations = self.controller.max_iterations_var
         self.view.abs_error = self.controller.abs_error_var
 
@@ -53,7 +52,7 @@ class LinearEquationSolverApp:
         self.view.generate_matrix_inputs = self.view.generate_matrix_inputs
         self.view.generate_initial_guess_inputs = (self.view.generate_initial_guess_inputs)
         self.view.on_method_change = self.controller.on_method_change
-        self.view.on_stopping_condition_change = (self.controller.on_stopping_condition_change)
+        self.view.on_lu_form_change = self.controller.on_lu_form_change
         self.view.solve_system = self.controller.solve
 
 

@@ -3,7 +3,7 @@ from utils.matrixChecks import isDiagonallyDominant, isSymmetricPositiveDefinite
 from utils.stepRecorder import copyVector
 
 
-def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None):
+def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
     if recorder.isEnabled():
         recorder.record("initial", "Initial system and guess", vectorX=copyVector(initialGuess), iteration=0, )
 
@@ -13,10 +13,11 @@ def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=
     if not diagonallyDominant and not spd:
         if recorder.isEnabled():
             recorder.record("warning",
-                            "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge", )
+                "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge", )
 
     x = initialGuess[:]
     iteration = 0
+    converged = False
 
     while iteration < maxIterations:
         xOld = x[:]
@@ -30,11 +31,18 @@ def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=
         if recorder.isEnabled():
             recorder.record("iteration", f"Iteration {iteration}", vectorX=copyVector(x), iteration=iteration, )
 
-        if absRelError is not None:
-            if checkConvergence(x, xOld, n, absRelError, recorder):
-                break
+        # Check convergence condition
+        if checkConvergence(x, xOld, n, absRelError, recorder):
+            converged = True
+            break
 
-    return x, iteration
+    if recorder.isEnabled():
+        if converged:
+            recorder.record("convergence", "Solution converged successfully")
+        else:
+            recorder.record("convergence", f"Solution did not converge after {maxIterations} iterations", )
+
+    return x, iteration, converged
 
 
 def checkConvergence(xNew, xOld, n, threshold, recorder):

@@ -25,7 +25,6 @@ class SolverParameters:
         self.lu_form = "Doolittle"
 
         self.initial_guess = None
-        self.stopping_condition = "Max Iterations"
         self.max_iterations = 100
         self.absolute_relative_error = 1e-6
 
@@ -35,6 +34,8 @@ class SolverResult:
         self.solution = []
         self.execution_time = 0.0
         self.iterations = 0
+        self.converged = (None  # None for non-iterative methods, True/False for iterative
+        )
         self.L_matrix = None
         self.U_matrix = None
         self.error_message = ""
@@ -76,15 +77,13 @@ def solve(params: SolverParameters) -> SolverResult:
 
         elif params.selected_method == "Jacobi":
             x0 = D.from_vector(params.initial_guess)
-            absRelError = (None if params.stopping_condition == "Max Iterations" else params.absolute_relative_error)
-            result.solution, result.iterations = jacobi(a, b, params.num_variables, x0, recorder,
-                maxIterations=params.max_iterations, absRelError=absRelError, )
+            result.solution, result.iterations, result.converged = jacobi(a, b, params.num_variables, x0, recorder,
+                maxIterations=params.max_iterations, absRelError=params.absolute_relative_error, )
 
         elif params.selected_method == "Gauss-Seidel":
             x0 = D.from_vector(params.initial_guess)
-            absRelError = (None if params.stopping_condition == "Max Iterations" else params.absolute_relative_error)
-            result.solution, result.iterations = gaussSeidel(a, b, params.num_variables, x0, recorder,
-                maxIterations=params.max_iterations, absRelError=absRelError, )
+            result.solution, result.iterations, result.converged = gaussSeidel(a, b, params.num_variables, x0, recorder,
+                maxIterations=params.max_iterations, absRelError=params.absolute_relative_error, )
 
         else:
             raise ValueError(f"Unknown method: {params.selected_method}")

@@ -1,6 +1,7 @@
 """
 Method configuration section component.
 """
+
 import customtkinter as ctk
 
 
@@ -17,21 +18,21 @@ def create_method_section(parent, app):
     ctk.CTkLabel(method_frame, text="Algorithm:", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w",
                                                                                                  pady=(0, 5))
 
-    methods = ["Gauss Elimination", "Gauss-Jordan", "LU Decomposition", "Jacobi", "Gauss-Seidel"]
+    methods = ["Gauss Elimination", "Gauss-Jordan", "LU Decomposition", "Jacobi", "Gauss-Seidel", ]
 
     ctk.CTkOptionMenu(method_frame, values=methods, variable=app.method, command=app.on_method_change, height=35,
-        font=ctk.CTkFont(size=14), dropdown_font=ctk.CTkFont(size=13)).pack(fill="x", pady=5)
+        font=ctk.CTkFont(size=14), dropdown_font=ctk.CTkFont(size=13), ).pack(fill="x", pady=5)
 
     # Checkboxes in one row (Enable Scaling and Step by Step side by side)
     checkboxes_row = ctk.CTkFrame(parent, fg_color="transparent")
     checkboxes_row.pack(fill="x", padx=15, pady=10)
 
     app.scaling_checkbox = ctk.CTkCheckBox(checkboxes_row, text="Enable Scaling", variable=app.scaling_enabled,
-        font=ctk.CTkFont(size=15, weight="bold"))
+        font=ctk.CTkFont(size=15, weight="bold"), )
     app.scaling_checkbox.pack(side="left", padx=(0, 20))
 
     ctk.CTkCheckBox(checkboxes_row, text="Step by Step", variable=app.step_by_step,
-        font=ctk.CTkFont(size=15, weight="bold")).pack(side="left")
+        font=ctk.CTkFont(size=15, weight="bold"), ).pack(side="left")
 
     # Parameters container
     app.params_container = ctk.CTkFrame(parent, fg_color="transparent")
@@ -39,7 +40,7 @@ def create_method_section(parent, app):
 
     # Solve button
     ctk.CTkButton(parent, text="SOLVE", command=app.solve_system, font=ctk.CTkFont(size=18, weight="bold"), height=50,
-        corner_radius=8).pack(fill="x", padx=15, pady=(10, 15))
+        corner_radius=8, ).pack(fill="x", padx=15, pady=(10, 15))
 
 
 def create_parameter_widgets(app):
@@ -53,61 +54,43 @@ def create_parameter_widgets(app):
 
     ctk.CTkLabel(app.lu_frame, text="LU Form:", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w", pady=(5, 5))
 
-    ctk.CTkOptionMenu(app.lu_frame, values=["Doolittle", "Crout", "Cholesky"], variable=app.lu_form, height=35,
-        font=ctk.CTkFont(size=14)).pack(fill="x", pady=5)
+    ctk.CTkOptionMenu(app.lu_frame, values=["Doolittle", "Crout", "Cholesky"], variable=app.lu_form,
+        command=app.on_lu_form_change, height=35, font=ctk.CTkFont(size=14), ).pack(fill="x", pady=5)
 
     # Iterative methods parameters
     app.iterative_frame = ctk.CTkFrame(app.params_container, fg_color="transparent")
 
     # Initial guess (horizontal row instead of vertical)
-    ctk.CTkLabel(app.iterative_frame, text="Initial Guess:", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w",
-                                                                                                            pady=(5, 5))
+    ctk.CTkLabel(app.iterative_frame, text="Initial Guess:", font=ctk.CTkFont(size=15, weight="bold"), ).pack(
+        anchor="w", pady=(5, 5))
 
     app.initial_guess_container = ctk.CTkFrame(app.iterative_frame, fg_color="transparent")
     app.initial_guess_container.pack(fill="x", pady=5)
 
-    # Stopping condition - dropdown and input in same row
+    # Stopping conditions - both max iterations and error tolerance
     stop_container = ctk.CTkFrame(app.iterative_frame, fg_color="transparent")
     stop_container.pack(fill="x", pady=(10, 5))
 
-    ctk.CTkLabel(stop_container, text="Stop Condition:", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w",
-                                                                                                        pady=(0, 5))
+    ctk.CTkLabel(stop_container, text="Stopping Conditions:", font=ctk.CTkFont(size=15, weight="bold"), ).pack(
+        anchor="w", pady=(0, 5))
 
-    # Row with dropdown and input side by side
-    stop_row = ctk.CTkFrame(stop_container, fg_color="transparent")
-    stop_row.pack(fill="x")
+    # Single row for both inputs
+    inputs_row = ctk.CTkFrame(stop_container, fg_color="transparent")
+    inputs_row.pack(fill="x", pady=(0, 5))
 
-    # Left side: dropdown
-    dropdown_frame = ctk.CTkFrame(stop_row, fg_color="transparent")
-    dropdown_frame.pack(side="left", fill="x", expand=True, padx=(0, 5))
+    # Max iterations (left side)
+    ctk.CTkLabel(inputs_row, text="Max Iterations:", font=ctk.CTkFont(size=13)).pack(side="left", padx=(0, 5))
+    ctk.CTkEntry(inputs_row, textvariable=app.max_iterations, width=100, height=35, font=ctk.CTkFont(size=14),
+        placeholder_text="100", ).pack(side="left", padx=(0, 15))
 
-    ctk.CTkOptionMenu(dropdown_frame, values=["Max Iterations", "Absolute Relative Error"],
-        variable=app.stopping_condition, command=app.on_stopping_condition_change, height=35,
-        font=ctk.CTkFont(size=14)).pack(fill="x")
-
-    # Right side: input (will be swapped based on selection)
-    app.stop_input_container = ctk.CTkFrame(stop_row, fg_color="transparent")
-    app.stop_input_container.pack(side="left", fill="x", expand=True, padx=(5, 0))
-
-    # Max iterations input
-    app.max_iter_frame = ctk.CTkFrame(app.stop_input_container, fg_color="transparent")
-
-    ctk.CTkEntry(app.max_iter_frame, textvariable=app.max_iterations, width=150, height=35, font=ctk.CTkFont(size=14),
-        placeholder_text="Max Iterations").pack(fill="x")
-
-    # Absolute error input
-    app.abs_error_frame = ctk.CTkFrame(app.stop_input_container, fg_color="transparent")
-
-    ctk.CTkEntry(app.abs_error_frame, textvariable=app.abs_error, width=150, height=35, font=ctk.CTkFont(size=14),
-        placeholder_text="Tolerance").pack(fill="x")
+    # Error tolerance (right side)
+    ctk.CTkLabel(inputs_row, text="Error Tolerance:", font=ctk.CTkFont(size=13)).pack(side="left", padx=(0, 5))
+    ctk.CTkEntry(inputs_row, textvariable=app.abs_error, width=100, height=35, font=ctk.CTkFont(size=14),
+        placeholder_text="1e-6", ).pack(side="left")
 
     # Initially hide all
     app.lu_frame.pack_forget()
     app.iterative_frame.pack_forget()
-
-    # Show max iterations by default
-    app.max_iter_frame.pack(fill="x")
-    app.abs_error_frame.pack_forget()
 
 
 def generate_initial_guess_inputs(app):
