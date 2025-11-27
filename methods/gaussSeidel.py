@@ -1,36 +1,38 @@
 from D import D
-from utils.matrixChecks import isDiagonallyDominant
+from utils.matrixChecks import isDiagonallyDominant, isSymmetricPositiveDefinite
 from utils.stepRecorder import copyVector
 
 
-def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None):
+def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=None):
     if recorder.isEnabled():
         recorder.record("initial", "Initial system and guess", vectorX=copyVector(initialGuess), iteration=0, )
 
-    if not isDiagonallyDominant(a, n):
+    diagonallyDominant = isDiagonallyDominant(a, n)
+    spd = isSymmetricPositiveDefinite(a, n)
+
+    if not diagonallyDominant and not spd:
         if recorder.isEnabled():
-            recorder.record("warning", "Warning: Matrix is not diagonally dominant - method may not converge", )
+            recorder.record("warning",
+                            "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge", )
 
     x = initialGuess[:]
-    xNew = [D.zero() for _ in range(n)]
     iteration = 0
 
     while iteration < maxIterations:
+        xOld = x[:]
         iteration += 1
 
         for i in range(n):
-            sumValue = sum(a[i][j] * x[j] for j in range(n) if j != i)
-            xNew[i] = (b[i] - sumValue) / a[i][i]
+            sumBefore = sum(a[i][j] * x[j] for j in range(i))
+            sumAfter = sum(a[i][j] * xOld[j] for j in range(i + 1, n))
+            x[i] = (b[i] - sumBefore - sumAfter) / a[i][i]
 
         if recorder.isEnabled():
-            recorder.record("iteration", f"Iteration {iteration}", vectorX=copyVector(xNew), iteration=iteration, )
+            recorder.record("iteration", f"Iteration {iteration}", vectorX=copyVector(x), iteration=iteration, )
 
         if absRelError is not None:
-            if checkConvergence(xNew, x, n, absRelError, recorder):
-                x = xNew[:]
+            if checkConvergence(x, xOld, n, absRelError, recorder):
                 break
-
-        x = xNew[:]
 
     return x, iteration
 
