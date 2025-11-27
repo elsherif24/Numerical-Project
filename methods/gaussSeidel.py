@@ -4,16 +4,15 @@ from utils.stepRecorder import copyVector
 
 
 def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
-    if recorder.isEnabled():
-        recorder.record("initial", "Initial system and guess", vectorX=copyVector(initialGuess), iteration=0, )
-
     diagonallyDominant = isDiagonallyDominant(a, n)
     spd = isSymmetricPositiveDefinite(a, n)
 
     if not diagonallyDominant and not spd:
         if recorder.isEnabled():
-            recorder.record("warning",
-                "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge", )
+            recorder.record(
+                "warning",
+                "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge",
+            )
 
     x = initialGuess[:]
     iteration = 0
@@ -28,11 +27,22 @@ def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=
             sumAfter = sum(a[i][j] * xOld[j] for j in range(i + 1, n))
             x[i] = (b[i] - sumBefore - sumAfter) / a[i][i]
 
+        # Calculate error for this iteration
+        error = calculateError(x, xOld, n)
+
         if recorder.isEnabled():
-            recorder.record("iteration", f"Iteration {iteration}", vectorX=copyVector(x), iteration=iteration, )
+            recorder.record(
+                "iteration",
+                f"Iteration {iteration}",
+                vectorX=copyVector(x),
+                iteration=iteration,
+            )
+            recorder.record(
+                "error", f"Error = {error}", error=error, threshold=absRelError
+            )
 
         # Check convergence condition
-        if checkConvergence(x, xOld, n, absRelError, recorder):
+        if error < absRelError:
             converged = True
             break
 
@@ -40,18 +50,12 @@ def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=
         if converged:
             recorder.record("convergence", "Solution converged successfully")
         else:
-            recorder.record("convergence", f"Solution did not converge after {maxIterations} iterations", )
+            recorder.record(
+                "convergence",
+                f"Solution did not converge after {maxIterations} iterations",
+            )
 
     return x, iteration, converged
-
-
-def checkConvergence(xNew, xOld, n, threshold, recorder):
-    error = calculateError(xNew, xOld, n)
-
-    if recorder.isEnabled():
-        recorder.record("error", f"Error = {error}", error=error, threshold=threshold)
-
-    return error < threshold
 
 
 def calculateError(xNew, xOld, n):

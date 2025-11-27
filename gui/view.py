@@ -7,7 +7,11 @@ import customtkinter as ctk
 
 from D import get_sig_figs
 from gui.input_section import create_input_config_section, generate_matrix_inputs
-from gui.method_section import (create_method_section, create_parameter_widgets, generate_initial_guess_inputs, )
+from gui.method_section import (
+    create_method_section,
+    create_parameter_widgets,
+    generate_initial_guess_inputs,
+)
 from gui.output_section import create_output_section
 
 
@@ -44,10 +48,14 @@ class LinearSolverView:
         main_container.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Create 2 columns
-        col1 = ctk.CTkFrame(main_container, fg_color=("#2b2b2b", "#1f1f1f"), corner_radius=10)
+        col1 = ctk.CTkFrame(
+            main_container, fg_color=("#2b2b2b", "#1f1f1f"), corner_radius=10
+        )
         col1.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        col2 = ctk.CTkFrame(main_container, fg_color=("#2b2b2b", "#1f1f1f"), corner_radius=10)
+        col2 = ctk.CTkFrame(
+            main_container, fg_color=("#2b2b2b", "#1f1f1f"), corner_radius=10
+        )
         col2.pack(side="left", fill="both", expand=True, padx=(5, 0))
 
         # Split column 1 into two rows
@@ -112,13 +120,19 @@ class LinearSolverView:
             for i, val in enumerate(model.solution):
                 self.output_text.insert("end", f"  x{i + 1} = {val}\n")
 
-            self.output_text.insert("end", f"\nExecution Time: {model.execution_time:.6f} seconds\n")
+            self.output_text.insert(
+                "end", f"\nExecution Time: {model.execution_time:.6f} seconds\n"
+            )
 
             if model.iterations is not None:
                 self.output_text.insert("end", f"Iterations: {model.iterations}\n")
 
                 if model.converged is not None:
-                    status = ("CONVERGED" if model.converged else "DIVERGED (Max iterations reached)")
+                    status = (
+                        "CONVERGED"
+                        if model.converged
+                        else "DIVERGED (Max iterations reached)"
+                    )
                     self.output_text.insert("end", f"Status: {status}\n")
 
     def display_steps(self, steps):
@@ -126,41 +140,90 @@ class LinearSolverView:
         self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n\n")
 
         for step in steps:
-            self.output_text.insert("end", f"Step {step.stepNumber}: {step.description}\n")
+            # Handle iterative methods with compact format
+            if step.operation == "iteration":
+                iteration_num = step.data.get("iteration", 0)
+                self.output_text.insert("end", f"Iteration {iteration_num}:\n")
+                if "vectorX" in step.data:
+                    self.display_iteration_vector(step.data["vectorX"])
+                # Skip to next step to get error
+                continue
+
+            # Handle error steps for iterative methods
+            if step.operation == "error":
+                if "error" in step.data:
+                    self.output_text.insert(
+                        "end", f"Absolute Relative Error = {step.data['error']}\n\n"
+                    )
+                continue
+
+            # Handle convergence message
+            if step.operation == "convergence":
+                self.output_text.insert("end", f"{step.description}\n\n")
+                continue
+
+            # Handle warning messages
+            if step.operation == "warning":
+                self.output_text.insert("end", f"{step.description}\n\n")
+                continue
+
+            # For all other methods, show step number and description
+            self.output_text.insert(
+                "end", f"Step {step.stepNumber}: {step.description}\n"
+            )
 
             if "augmented" in step.data:
                 self.display_augmented_matrix(step.data["augmented"])
 
-            if "matrix_a" in step.data:
-                self.display_matrix("A", step.data["matrix_a"])
+            if "matrixA" in step.data:
+                self.display_matrix("A", step.data["matrixA"])
 
-            if "matrix_L" in step.data:
-                self.display_matrix("L", step.data["matrix_L"])
+            # Display L and U matrices side by side for LU decomposition
+            if "matrixL" in step.data and "matrixU" in step.data:
+                self.display_lu_matrices_combined(
+                    step.data["matrixL"], step.data["matrixU"]
+                )
+            elif "matrixL" in step.data:
+                self.display_matrix("L", step.data["matrixL"])
+            elif "matrixU" in step.data:
+                self.display_matrix("U", step.data["matrixU"])
 
-            if "matrix_U" in step.data:
-                self.display_matrix("U", step.data["matrix_U"])
+            if "vectorB" in step.data:
+                self.display_vector("b", step.data["vectorB"])
 
-            if "vector_b" in step.data:
-                self.display_vector("b", step.data["vector_b"])
+            if "vectorY" in step.data:
+                self.display_vector("y", step.data["vectorY"])
 
-            if "vector_y" in step.data:
-                self.display_vector("y", step.data["vector_y"])
-
-            if "vector_x" in step.data:
-                self.display_iteration_vector(step.data["vector_x"])
-
-            if "iteration" in step.data:
-                self.output_text.insert("end", f"  Iteration: {step.data['iteration']}\n")
-
-            if "error" in step.data:
-                self.output_text.insert("end", f"  Error: {step.data['error']}\n")
-                if "threshold" in step.data:
-                    self.output_text.insert("end", f"  Threshold: {step.data['threshold']}\n")
-
-            if "final_error" in step.data:
-                self.output_text.insert("end", f"  Final Error: {step.data['final_error']}\n")
+            if "vectorX" in step.data and step.operation not in ["iteration", "error"]:
+                self.display_vector("x", step.data["vectorX"])
 
             self.output_text.insert("end", "\n")
+
+    def display_lu_matrices_combined(self, L, U):
+        """Display L and U matrices side by side with proper alignment"""
+        if not L or not U:
+            return
+
+        n = len(L)
+        col_width = get_sig_figs() + 7
+
+        # Convert all elements to strings for both matrices
+        str_L = [[str(elem) for elem in row] for row in L]
+        str_U = [[str(elem) for elem in row] for row in U]
+
+        self.output_text.insert("end", "  L Matrix:\n")
+        for row in str_L:
+            row_str = "    "
+            for val in row:
+                row_str += val.rjust(col_width) + "  "
+            self.output_text.insert("end", row_str + "\n")
+
+        self.output_text.insert("end", "\n  U Matrix:\n")
+        for row in str_U:
+            row_str = "    "
+            for val in row:
+                row_str += val.rjust(col_width) + "  "
+            self.output_text.insert("end", row_str + "\n")
 
     def display_augmented_matrix(self, aug_matrix):
         """Display augmented matrix with proper alignment and separator"""
@@ -220,13 +283,12 @@ class LinearSolverView:
 
     def display_iteration_vector(self, vector):
         """Display iteration vector for iterative methods"""
-        col_width = get_sig_figs() + 5
-        self.output_text.insert("end", "  x = [ ")
+        self.output_text.insert("end", "x = [")
         for i, val in enumerate(vector):
             if i > 0:
                 self.output_text.insert("end", ", ")
-            self.output_text.insert("end", str(val).rjust(col_width))
-        self.output_text.insert("end", " ]\n")
+            self.output_text.insert("end", str(val))
+        self.output_text.insert("end", "]\n")
 
     def display_error(self, error_message: str):
         """Display error message"""
