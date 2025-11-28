@@ -1,7 +1,3 @@
-"""
-Input handling and data extraction functions.
-"""
-
 from tkinter import messagebox
 from typing import Optional, Tuple
 
@@ -9,7 +5,6 @@ import numpy as np
 
 
 def get_matrix_and_constants(app) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-    """Extract matrix A and constant vector b from entry fields"""
     try:
         n = app.num_vars.get()
         A = np.zeros((n, n))
@@ -30,7 +25,6 @@ def get_matrix_and_constants(app) -> Tuple[Optional[np.ndarray], Optional[np.nda
 
 
 def get_initial_guess(app) -> Optional[np.ndarray]:
-    """Extract initial guess from entry fields"""
     try:
         n = app.num_vars.get()
         x0 = np.zeros(n)
@@ -46,7 +40,6 @@ def get_initial_guess(app) -> Optional[np.ndarray]:
 
 
 def format_number(num, sig_figs):
-    """Format number with specified significant figures"""
     if hasattr(num, "__float__"):
         num = float(num)
     return f"{num:.{sig_figs}g}"

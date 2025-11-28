@@ -1,16 +1,23 @@
-"""
-Output display section component.
-"""
-
 import customtkinter as ctk
 
 
 def create_output_section(parent, app):
-    """Create the output display section"""
-    # Header
-    header = ctk.CTkLabel(parent, text="Output", font=ctk.CTkFont(size=20, weight="bold"))
-    header.pack(pady=(15, 10), padx=15, anchor="w")
+    output_container = ctk.CTkFrame(parent, fg_color="transparent")
+    output_container.pack(fill="both", expand=True, padx=15, pady=15)
 
-    # Output text box with monospace font for proper alignment
-    app.output_text = ctk.CTkTextbox(parent, font=ctk.CTkFont(family="Courier New", size=16), corner_radius=8)
-    app.output_text.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+    header = ctk.CTkLabel(
+        output_container,
+        text="Output",
+        font=ctk.CTkFont(family="Courier New", size=20, weight="bold"),
+    )
+    header.pack(pady=(0, 10), anchor="w")
+
+    content_frame = ctk.CTkFrame(output_container, fg_color="transparent")
+    content_frame.pack(fill="both", expand=True)
+
+    app.output_text = ctk.CTkTextbox(
+        content_frame, font=ctk.CTkFont(family="Courier New", size=14), corner_radius=8
+    )
+    app.output_text.pack(side="left", fill="both", expand=True)
+
+    app.current_steps = []

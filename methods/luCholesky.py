@@ -14,6 +14,10 @@ def luCholesky(a, b, n, recorder):
             recorder.record("error", errorMsg)
         raise ValueError(errorMsg)
 
+    warning_message = "Matrix is Symmetric Positive Definite (SPD) - Cholesky decomposition can proceed"
+    if recorder.isEnabled():
+        recorder.record("validation", warning_message)
+
     L = [[D.zero() for _ in range(n)] for _ in range(n)]
 
     for i in range(n):
@@ -24,25 +28,34 @@ def luCholesky(a, b, n, recorder):
 
                 if value <= D.zero():
                     raise ValueError(
-                        f"Matrix is not positive definite: non-positive value at position ({i + 1}, {i + 1})")
+                        f"Matrix is not positive definite: non-positive value at position ({i + 1}, {i + 1})"
+                    )
 
                 L[i][j] = value.sqrt()
             else:
                 if L[j][j].isNearZero():
-                    raise ValueError(f"Matrix is singular: zero diagonal at position ({j + 1}, {j + 1})")
+                    raise ValueError(
+                        f"Matrix is singular: zero diagonal at position ({j + 1}, {j + 1})"
+                    )
                 sumValue = sum(L[i][k] * L[j][k] for k in range(j))
                 L[i][j] = (a[i][j] - sumValue) / L[j][j]
 
         if recorder.isEnabled():
-            recorder.record("decompositionStep", f"Computing L row {i + 1}", matrixL=copyMatrix(L))
+            recorder.record(
+                "decompositionStep", f"Computing L row {i + 1}", matrixL=copyMatrix(L)
+            )
 
     U = [[L[j][i] for j in range(n)] for i in range(n)]
 
     if recorder.isEnabled():
-        recorder.record("decompositionComplete", "LU Decomposition complete (Cholesky form)", matrixL=copyMatrix(L),
-                        matrixU=copyMatrix(U), )
+        recorder.record(
+            "decompositionComplete",
+            "LU Decomposition complete (Cholesky form)",
+            matrixL=copyMatrix(L),
+            matrixU=copyMatrix(U),
+        )
 
     y = forwardSubstitution(L, b, n, recorder)
     x = backwardSubstitution(U, y, n, recorder)
 
-    return x, L, U
+    return x, L, U, warning_message
