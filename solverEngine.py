@@ -32,9 +32,9 @@ class SolverResult:
         self.solution = []
         self.execution_time = 0.0
         self.iterations = 0
-        self.converged = False
-        self.L_matrix = []
-        self.U_matrix = []
+        self.converged = None
+        self.L_matrix = None
+        self.U_matrix = None
         self.error_message = ""
         self.warning_message = ""
         self.steps = []
