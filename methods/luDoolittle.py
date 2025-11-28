@@ -13,45 +13,67 @@ def luDoolittle(a, b, n, scalingEnabled, recorder):
     L = [[D.zero() for _ in range(n)] for _ in range(n)]
     U = [[D.zero() for _ in range(n)] for _ in range(n)]
 
-    for i in range(n):
-        pivotRow = findPivotRow(a, i, n, scalers)
+    # Perform decomposition with pivoting
+    for k in range(n - 1):
+        # Find pivot row
+        pivotRow = findPivotRow(a, k, n, scalers)
 
-        if pivotRow != i:
-            swapRows(a, b, i, pivotRow)
-            swapRows(U, [D.zero()] * n, i, pivotRow)
-            swapScalers(scalers, i, pivotRow)
-
-            for j in range(i):
-                L[i][j], L[pivotRow][j] = L[pivotRow][j], L[i][j]
+        # Swap rows if needed
+        if pivotRow != k:
+            swapRows(a, b, k, pivotRow)
+            if scalers is not None:
+                swapScalers(scalers, k, pivotRow)
 
             if recorder.isEnabled():
-                recorder.record("pivot", f"Partial pivoting: Swap R{i + 1} ↔ R{pivotRow + 1}", matrixL=copyMatrix(L),
-                    matrixU=copyMatrix(U), )
+                recorder.record(
+                    "pivot",
+                    f"Partial pivoting: Swap R{k + 1} ↔ R{pivotRow + 1}",
+                    matrixA=copyMatrix(a),
+                )
 
-        for k in range(i, n):
-            sumValue = sum(L[i][j] * U[j][k] for j in range(i))
-            U[i][k] = a[i][k] - sumValue
+        # Check for singular matrix
+        if a[k][k].isNearZero():
+            raise ValueError(
+                f"Matrix is singular: zero pivot at position ({k + 1}, {k + 1})"
+            )
+
+        # Elimination - store L factors in lower part of a
+        for i in range(k + 1, n):
+            factor = a[i][k] / a[k][k]
+            a[i][k] = factor  # Store L coefficient in place
+
+            for j in range(k + 1, n):
+                a[i][j] = a[i][j] - factor * a[k][j]
 
         if recorder.isEnabled():
-            recorder.record("decompositionStep", f"Computing U row {i + 1}", matrixL=copyMatrix(L),
-                matrixU=copyMatrix(U), )
+            recorder.record(
+                "decompositionStep", f"Elimination step {k + 1}", matrixA=copyMatrix(a)
+            )
 
-        if U[i][i].isNearZero():
-            raise ValueError(f"Matrix is singular: zero pivot at position ({i + 1}, {i + 1})")
+    # Check last pivot
+    if a[n - 1][n - 1].isNearZero():
+        raise ValueError(f"Matrix is singular: zero pivot at position ({n}, {n})")
 
-        L[i][i] = D.one()
-        for k in range(i + 1, n):
-            sumValue = sum(L[k][j] * U[j][i] for j in range(i))
-            L[k][i] = (a[k][i] - sumValue) / U[i][i]
-
-        if recorder.isEnabled():
-            recorder.record("decompositionStep", f"Computing L column {i + 1}", matrixL=copyMatrix(L),
-                matrixU=copyMatrix(U), )
+    # Extract L and U from the combined matrix
+    for i in range(n):
+        for j in range(n):
+            if i > j:
+                L[i][j] = a[i][j]  # Lower part
+            elif i == j:
+                L[i][j] = D.one()  # Diagonal of L is 1
+                U[i][j] = a[i][j]  # Diagonal of U
+            else:
+                U[i][j] = a[i][j]  # Upper part
 
     if recorder.isEnabled():
-        recorder.record("decompositionComplete", "LU Decomposition complete (Doolittle with partial pivoting form)",
-            matrixL=copyMatrix(L), matrixU=copyMatrix(U), )
+        recorder.record(
+            "decompositionComplete",
+            "LU Decomposition complete (Doolittle with partial pivoting form)",
+            matrixL=copyMatrix(L),
+            matrixU=copyMatrix(U),
+        )
 
+    # Solve using forward and backward substitution
     y = forwardSubstitution(L, b, n, recorder)
     x = backwardSubstitution(U, y, n, recorder)
 

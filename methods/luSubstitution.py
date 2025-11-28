@@ -5,7 +5,7 @@ from utils.stepRecorder import copyMatrix, copyVector
 def forwardSubstitution(L, b, n, recorder):
     if recorder.isEnabled():
         recorder.record("forwardSubstitutionStart", "Starting forward substitution: Ly = b", matrixL=copyMatrix(L),
-            vectorB=copyVector(b), )
+                        vectorB=copyVector(b), )
 
     y = D.zeros(n)
 
@@ -27,7 +27,7 @@ def forwardSubstitution(L, b, n, recorder):
 def backwardSubstitution(U, y, n, recorder):
     if recorder.isEnabled():
         recorder.record("backwardSubstitutionStart", "Starting backward substitution: Ux = y", matrixU=copyMatrix(U),
-            vectorY=copyVector(y), )
+                        vectorY=copyVector(y), )
 
     x = D.zeros(n)
 
@@ -50,6 +50,6 @@ def backwardSubstitution(U, y, n, recorder):
 
     if recorder.isEnabled():
         recorder.record("backwardSubstitutionComplete", "Backward substitution complete - Solution found",
-            vectorX=copyVector(x), )
+                        vectorX=copyVector(x), )
 
     return x

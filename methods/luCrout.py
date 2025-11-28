@@ -19,7 +19,7 @@ def luCrout(a, b, n, recorder):
 
         if recorder.isEnabled():
             recorder.record("decompositionStep", f"Computing L column {j + 1}", matrixL=copyMatrix(L),
-                matrixU=copyMatrix(U), )
+                            matrixU=copyMatrix(U), )
 
         for i in range(j + 1, n):
             if L[j][j].isNearZero():
@@ -29,11 +29,11 @@ def luCrout(a, b, n, recorder):
 
         if recorder.isEnabled():
             recorder.record("decompositionStep", f"Computing U row {j + 1}", matrixL=copyMatrix(L),
-                matrixU=copyMatrix(U), )
+                            matrixU=copyMatrix(U), )
 
     if recorder.isEnabled():
         recorder.record("decompositionComplete", "LU Decomposition complete (Crout form)", matrixL=copyMatrix(L),
-            matrixU=copyMatrix(U), )
+                        matrixU=copyMatrix(U), )
 
     y = forwardSubstitution(L, b, n, recorder)
     x = backwardSubstitution(U, y, n, recorder)

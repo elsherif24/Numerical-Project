@@ -47,4 +47,4 @@ def eliminateRowBackward(a, b, pivotRow, targetRow, n, recorder):
     if recorder.isEnabled():
         augmented = createAugmentedMatrix(a, b)
         recorder.record("backward_elimination", f"R{targetRow + 1} = R{targetRow + 1} - ({multiplier})R{pivotRow + 1}",
-            augmented=augmented, )
+                        augmented=augmented, )

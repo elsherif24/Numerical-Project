@@ -1,16 +1,19 @@
 from D import D
-from utils.matrixChecks import isDiagonallyDominant, isSymmetricPositiveDefinite
+from utils.matrixChecks import isDiagonallyDominant
 from utils.stepRecorder import copyVector
 
 
 def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
     warning_message = None
 
-    diagonallyDominant = isDiagonallyDominant(a, n)
-    spd = isSymmetricPositiveDefinite(a, n)
-
-    if not diagonallyDominant and not spd:
-        warning_message = "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge"
+    if isDiagonallyDominant(a, n):
+        warning_message = "Matrix is diagonally dominant - method should converge"
+        if recorder.isEnabled():
+            recorder.record("info", warning_message)
+    else:
+        warning_message = (
+            "Warning: Matrix is not diagonally dominant - method may not converge"
+        )
         if recorder.isEnabled():
             recorder.record("warning", warning_message)
 

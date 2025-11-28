@@ -40,7 +40,7 @@ def luCholesky(a, b, n, recorder):
 
     if recorder.isEnabled():
         recorder.record("decompositionComplete", "LU Decomposition complete (Cholesky form)", matrixL=copyMatrix(L),
-            matrixU=copyMatrix(U), )
+                        matrixU=copyMatrix(U), )
 
     y = forwardSubstitution(L, b, n, recorder)
     x = backwardSubstitution(U, y, n, recorder)

@@ -63,7 +63,7 @@ def eliminateRow(a, b, pivotRow, targetRow, n, recorder):
     if recorder.isEnabled():
         augmented = createAugmentedMatrix(a, b)
         recorder.record("elimination", f"R{targetRow + 1} = R{targetRow + 1} - ({multiplier})R{pivotRow + 1}",
-            augmented=augmented, )
+                        augmented=augmented, )
 
 
 def substitution(a, b, n):

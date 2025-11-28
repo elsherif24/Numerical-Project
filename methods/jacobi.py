@@ -6,7 +6,11 @@ from utils.stepRecorder import copyVector
 def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
     warning_message = None
 
-    if not isDiagonallyDominant(a, n):
+    if isDiagonallyDominant(a, n):
+        warning_message = "Matrix is diagonally dominant - method should converge"
+        if recorder.isEnabled():
+            recorder.record("info", warning_message)
+    else:
         warning_message = (
             "Warning: Matrix is not diagonally dominant - method may not converge"
         )
