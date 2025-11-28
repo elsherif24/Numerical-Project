@@ -4,15 +4,15 @@ from utils.stepRecorder import copyVector
 
 
 def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
+    warning_message = None
+
     diagonallyDominant = isDiagonallyDominant(a, n)
     spd = isSymmetricPositiveDefinite(a, n)
 
     if not diagonallyDominant and not spd:
+        warning_message = "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge"
         if recorder.isEnabled():
-            recorder.record(
-                "warning",
-                "Warning: Matrix is neither diagonally dominant nor SPD - method may not converge",
-            )
+            recorder.record("warning", warning_message)
 
     x = initialGuess[:]
     iteration = 0
@@ -55,7 +55,7 @@ def gaussSeidel(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=
                 f"Solution did not converge after {maxIterations} iterations",
             )
 
-    return x, iteration, converged
+    return x, iteration, converged, warning_message
 
 
 def calculateError(xNew, xOld, n):

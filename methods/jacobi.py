@@ -4,12 +4,14 @@ from utils.stepRecorder import copyVector
 
 
 def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
+    warning_message = None
+
     if not isDiagonallyDominant(a, n):
+        warning_message = (
+            "Warning: Matrix is not diagonally dominant - method may not converge"
+        )
         if recorder.isEnabled():
-            recorder.record(
-                "warning",
-                "Warning: Matrix is not diagonally dominant - method may not converge",
-            )
+            recorder.record("warning", warning_message)
 
     x = initialGuess[:]
     xNew = [D.zero() for _ in range(n)]
@@ -55,7 +57,7 @@ def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6)
                 f"Solution did not converge after {maxIterations} iterations",
             )
 
-    return x, iteration, converged
+    return x, iteration, converged, warning_message
 
 
 def calculateError(xNew, xOld, n):

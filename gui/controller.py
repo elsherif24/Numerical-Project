@@ -101,10 +101,26 @@ class LinearSolverController:
         # Update model with results
         self.model.clear_results()
         if result.error_message:
-            self.view.display_error(result.error_message)
+            # If we have steps (step-by-step mode was on), show them along with error
+            if result.steps:
+                self.model.steps = result.steps
+                self.view.display_output_with_error(self.model, result.error_message)
+            else:
+                self.view.display_error(result.error_message)
         else:
-            self.model.set_solution(result.solution, result.execution_time, result.iterations, result.converged, )
+            self.model.set_solution(
+                result.solution,
+                result.execution_time,
+                result.iterations,
+                result.converged,
+            )
             if result.L_matrix is not None:
                 self.model.set_lu_matrices(result.L_matrix, result.U_matrix)
             self.model.steps = result.steps
+
+            # Store warning message if present (for iterative methods)
+            self.model.warning_message = (
+                result.warning_message if result.warning_message else None
+            )
+
             self.view.display_output(self.model)

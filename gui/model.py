@@ -36,10 +36,12 @@ class LinearSolverModel:
         self.L_matrix: Optional[np.ndarray] = None
         self.U_matrix: Optional[np.ndarray] = None
         self.iterations: Optional[int] = None
-        self.converged: Optional[bool] = (None  # None for non-iterative, True/False for iterative
+        self.converged: Optional[bool] = (
+            None  # None for non-iterative, True/False for iterative
         )
         self.execution_time: Optional[float] = None
         self.steps = []
+        self.warning_message: Optional[str] = None
 
     def set_matrix_data(self, A: np.ndarray, b: np.ndarray):
         """Store matrix and constant vector"""
@@ -50,8 +52,13 @@ class LinearSolverModel:
         """Store initial guess for iterative methods"""
         self.initial_guess = x0
 
-    def set_solution(self, solution: np.ndarray, execution_time: float, iterations: Optional[int] = None,
-            converged: Optional[bool] = None, ):
+    def set_solution(
+        self,
+        solution: np.ndarray,
+        execution_time: float,
+        iterations: Optional[int] = None,
+        converged: Optional[bool] = None,
+    ):
         """Store solution and statistics"""
         self.solution = solution
         self.execution_time = execution_time
@@ -72,6 +79,7 @@ class LinearSolverModel:
         self.converged = None
         self.execution_time = None
         self.steps = []
+        self.warning_message = None
 
     def get_method_requires_scaling(self) -> bool:
         """Check if current method supports scaling"""

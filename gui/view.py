@@ -95,6 +95,10 @@ class LinearSolverView:
         self.output_text.insert("end", f"Method: {model.method}\n")
         self.output_text.insert("end", "=" * 70 + "\n\n")
 
+        # Display warning message if present (for iterative methods)
+        if model.warning_message:
+            self.output_text.insert("end", f"{model.warning_message}\n\n")
+
         # Display step-by-step if enabled and steps exist
         if model.step_by_step and model.steps:
             self.display_steps(model.steps)
@@ -289,6 +293,22 @@ class LinearSolverView:
                 self.output_text.insert("end", ", ")
             self.output_text.insert("end", str(val))
         self.output_text.insert("end", "]\n")
+
+    def display_output_with_error(self, model, error_message: str):
+        """Display step-by-step solution followed by error message"""
+        self.output_text.delete("1.0", "end")
+
+        self.output_text.insert("end", f"Method: {model.method}\n")
+        self.output_text.insert("end", "=" * 70 + "\n\n")
+
+        # Display step-by-step if steps exist
+        if model.step_by_step and model.steps:
+            self.display_steps(model.steps)
+            self.output_text.insert("end", "\n" + "=" * 70 + "\n\n")
+
+        # Display error message prominently
+        self.output_text.insert("end", "ERROR OCCURRED:\n")
+        self.output_text.insert("end", f"{error_message}\n")
 
     def display_error(self, error_message: str):
         """Display error message"""
