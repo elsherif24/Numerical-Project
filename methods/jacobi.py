@@ -4,6 +4,12 @@ from utils.stepRecorder import copyVector
 
 
 def jacobi(a, b, n, initialGuess, recorder, maxIterations=100, absRelError=1e-6):
+    for i in range(n):
+        if a[i][i].isNearZero():
+            raise ValueError(
+                f"Error: Zero diagonal element at position ({i + 1}, {i + 1}) - Jacobi method requires non-zero diagonal elements"
+            )
+
     warning_message = None
 
     if isDiagonallyDominant(a, n):
