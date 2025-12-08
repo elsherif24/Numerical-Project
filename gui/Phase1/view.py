@@ -1,13 +1,13 @@
 import customtkinter as ctk
 
 from D import get_sig_figs
-from gui.input_section import create_input_config_section, generate_matrix_inputs
-from gui.method_section import (
+from gui.Phase1.input_section import create_input_config_section, generate_matrix_inputs
+from gui.Phase1.method_section import (
     create_method_section,
     create_parameter_widgets,
     generate_initial_guess_inputs,
 )
-from gui.output_section import create_output_section
+from gui.Phase1.output_section import create_output_section
 
 
 class LinearSolverView:

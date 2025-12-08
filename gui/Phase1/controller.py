@@ -1,7 +1,7 @@
 import customtkinter as ctk
 
-from gui.input_handlers import get_initial_guess, get_matrix_and_constants
-from gui.model import LinearSolverModel
+from gui.Phase1.input_handlers import get_initial_guess, get_matrix_and_constants
+from gui.Phase1.model import LinearSolverModel
 from solverEngine import SolverParameters
 from solverEngine import solve as solve_system
 

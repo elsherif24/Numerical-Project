@@ -22,15 +22,31 @@ def round_sig(x: Decimal, sig: int) -> Decimal:
 
 
 class D:
+    # def __init__(self, value):
+    #     self.val = round_sig(Decimal(str(value)), _Config.SIG_FIGS)
     def __init__(self, value):
-        self.val = round_sig(Decimal(str(value)), _Config.SIG_FIGS)
+        if isinstance(value, D):
+            self.val = value.val
+        elif isinstance(value, Decimal):
+            self.val = round_sig(value, _Config.SIG_FIGS)
+        else:
+            # convert via str to avoid float repr quirks
+            self.val = round_sig(Decimal(str(value)), _Config.SIG_FIGS)
 
+    # def _apply(self, other, op):
+    #     if isinstance(other, D):
+    #         other = other.val
+    #     result = op(self.val, Decimal(str(other)))
+    #     return D(result)
     def _apply(self, other, op):
         if isinstance(other, D):
-            other = other.val
-        result = op(self.val, Decimal(str(other)))
+            other_val = other.val
+        elif isinstance(other, Decimal):
+            other_val = other
+        else:
+            other_val = Decimal(str(other))
+        result = op(self.val, other_val)
         return D(result)
-
     def __add__(self, other):
         return self._apply(other, lambda a, b: a + b)
 
@@ -108,27 +124,40 @@ class D:
     def __ge__(self, other):
         return self.__gt__(other) or self.__eq__(other)
 
-    def sqrt(self):
-        return D(self.val.sqrt())
+    # def sqrt(self):
+    #     return D(self.val.sqrt())
+
+    # def exp(self):
+    #     return D(self.val.exp())
+
+    # def ln(self):
+    #     return D(self.val.ln())
+
+    # def log10(self):
+    #     return D(self.val.log10())
+    def sqrt(self): return D(math.sqrt(float(self.val)))
 
     def exp(self):
-        return D(self.val.exp())
+     return D(math.exp(float(self.val)))
 
     def ln(self):
-        return D(self.val.ln())
+     return D(math.log(float(self.val)))
 
     def log10(self):
-        return D(self.val.log10())
+     return D(math.log10(float(self.val)))
 
+    # def log(self, base=None):
+    #     if base is None:
+    #         return self.ln()
+    #     base_val = base.val if isinstance(base, D) else Decimal(str(base))
+    #     return D(self.val.ln() / Decimal(str(base_val)).ln())
     def log(self, base=None):
-        if base is None:
-            return self.ln()
+        if base is None: return self.ln()
         base_val = base.val if isinstance(base, D) else Decimal(str(base))
-        return D(self.val.ln() / Decimal(str(base_val)).ln())
-
-    def floor(self):
-        return D(int(self.val))
-
+        return D(math.log(float(self.val), float(base_val)))
+    # def floor(self):
+    #     return D(int(self.val))
+    def floor(self): return D(int(math.floor(float(self.val))))
     def ceil(self):
         return D(math.ceil(float(self.val)))
 
