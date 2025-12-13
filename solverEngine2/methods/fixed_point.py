@@ -2,14 +2,50 @@
 Fixed Point Iteration method implementation.
 Solves x = g(x) by iterating x_{n+1} = g(x_n).
 """
+from decimal import Overflow
 import math
 from solverEngine2.methods.base_method import BaseRootFindingMethod
 from solverEngine2.base.data_classes import RootFinderParameters, RootFinderResult
 from D import D
+import sympy as sp
+
 
 
 class FixedPointMethod(BaseRootFindingMethod):
-  
+    def analyze_convergence_simple(self, g_equation: str, x0: float) -> str:
+        """
+        Simple convergence analysis using symbolic derivative at x0.
+        Returns a string describing the convergence behavior.
+        """
+        try:
+            
+            # Get symbolic derivative
+            x = sp.symbols('x')
+            expr = sp.sympify(g_equation.replace('^', '**'))
+            derivative = sp.diff(expr, x)
+            
+            # Evaluate at x0
+            g_prime = float(derivative.subs(x, x0))
+            abs_g_prime = abs(g_prime)
+            
+            # Simple classification
+            if abs_g_prime < 1:
+                if g_prime >= 0:
+                    return f"Converges monotonically (|g'|={abs_g_prime:.3f} < 1, g' ≥ 0)"
+                else:
+                    return f"Converges oscillatory (|g'|={abs_g_prime:.3f} < 1, g' < 0)"
+            elif abs_g_prime > 1:
+                if g_prime >= 0:
+                    return f"Diverges monotonically (|g'|={abs_g_prime:.3f} > 1)"
+                else:
+                    return f"Diverges oscillatory (|g'|={abs_g_prime:.3f} > 1)"
+            else:
+                return f"Marginal convergence (|g'| ≈ 1)"
+                
+        except:
+            # If sympy fails, give generic message
+            return "Convergence analysis not available"
+     
     def validate_parameters(self) -> bool:
         if not self.params.g_equation:
             self.result.error_message = "g(x) equation is required for Fixed Point method"
@@ -39,11 +75,10 @@ class FixedPointMethod(BaseRootFindingMethod):
             # Parse the g(x) equation for Fixed Point iteration
             g_func = None
             try:
-                # Try to import equation parser from your codebase
                 from solverEngine2.base.equation_parser import parse_equation
                 g_func = parse_equation(params.g_equation)
+                print(g_func)
             except ImportError:
-                # Fallback: Use lambda with eval (less secure)
                 g_func = lambda x: eval(params.g_equation.replace('^', '**'), 
                                         {"x": x, "exp": math.exp, "sin": math.sin, 
                                          "cos": math.cos, "ln": math.log, "log10": math.log10,
@@ -55,7 +90,11 @@ class FixedPointMethod(BaseRootFindingMethod):
             # Convert to D objects for significant figure handling
             x0 = D(params.x0)
             epsilon = D(params.epsilon)
-            
+            convergence_prediction = self.analyze_convergence_simple(
+               params.g_equation, 
+               float(params.x0)
+              )
+
             if params.step_by_step:
                 steps.append({
                     'type': 'info',
@@ -63,7 +102,8 @@ class FixedPointMethod(BaseRootFindingMethod):
                     'equation': params.equation,
                     'g_equation': params.g_equation,
                     'x0': str(x0),
-                    'epsilon': str(epsilon)
+                    'epsilon': str(epsilon),
+                    'convergence_prediction': convergence_prediction
                 })
             
             xr = x0  # Current approximation
@@ -83,19 +123,38 @@ class FixedPointMethod(BaseRootFindingMethod):
                     if not isinstance(g_value, D):
                         g_value = D(g_value)
                     xr = g_value
+                except ValueError  as e:
+                    if "Overflow" in str(e):
+                       self.result.error_message = f"Overflow at iteration {i}: Method is diverging (values too large)"
+                       self.result.root = float(xr_prev) if xr_prev is not None else float(x0)
+                       self.result.iterations = i - 1
+                       self.result.converged = False
+                       if params.step_by_step:
+                            steps.append({
+                    'type': 'error',
+                    'message': f'Overflow detected at iteration {i}',
+                    'last_valid_x': str(xr_prev)
+                        })
+                       self.result.steps = steps
+                       return self.finalize()
+                    else:
+                         self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
+                         break
                 except Exception as e:
-                    self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
-                    break
+                         self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
+                         break
                 
                 # Calculate absolute error (not relative)
                 if xr_prev is not None:
                     ea = float(abs(xr - xr_prev))
-                
+                try:
                 # Evaluate f(x) at current approximation
-                f_xr = self.func(xr)
-                if not isinstance(f_xr, D):
-                    f_xr = D(f_xr)
-                
+                    f_xr = self.func(xr)
+                    if not isinstance(f_xr, D):
+                      f_xr = D(f_xr)
+                except (ValueError, Overflow) as e:
+                    self.result.error_message = f"Error evaluating f(x) at iteration {i}: Overflow/Divergence"
+                    break
                 if params.step_by_step:
                     steps.append({
                         'type': 'iteration',
@@ -106,11 +165,10 @@ class FixedPointMethod(BaseRootFindingMethod):
                         # 'x_current': str(xr),
                         # 'g_x': str(xr),  # g(x) = current x
                         # 'f_x': str(f_xr),
-                        'error': ea*100 if ea != float('inf') else None,
+                        'error': str(D(ea*100 ))if ea != float('inf') else None,
                         'method': 'Fixed Point'
                     })
                 
-                # Check if function value is near zero (root found)
                 if f_xr.isNearZero():
                     self.result.root = float(xr)
                     self.result.f_root = float(f_xr)
@@ -129,7 +187,6 @@ class FixedPointMethod(BaseRootFindingMethod):
                     self.result.steps = steps
                     return self.finalize()
                 
-                # Check convergence based on absolute error (not relative)
                 if ea != float('inf') and ea < float(params.epsilon):
                     self.result.root = float(xr)
                     self.result.f_root = float(f_xr)
@@ -148,15 +205,13 @@ class FixedPointMethod(BaseRootFindingMethod):
                     self.result.steps = steps
                     return self.finalize()
                 
-                # Check for divergence (stagnation or oscillation)
-                if i > 2:
-                    # Check if error is increasing or not decreasing
-                    if ea > 1e10:  # Diverging to infinity
-                        self.result.error_message = f"Divergence detected after {i} iterations"
-                        break
-                    if abs(float(f_xr)) > 1e10:  # Function value blowing up
-                        self.result.error_message = f"Function value too large after {i} iterations"
-                        break
+                # if i > 2:
+                #     if ea > 1e10:  # Diverging to infinity
+                #         self.result.error_message = f"Divergence detected after {i} iterations"
+                #         break
+                #     if abs(float(f_xr)) > 1e10:  # Function value blowing up
+                #         self.result.error_message = f"Function value too large after {i} iterations"
+                #         break
             
             # Max iterations reached or divergence
             self.result.root = float(xr)

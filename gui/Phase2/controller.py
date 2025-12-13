@@ -125,7 +125,7 @@ class Phase2Controller:
         
         # Interval-based
         self.xl_var = ctk.DoubleVar(value=1.0)
-        self.xu_var = ctk.DoubleVar(value=2.0)
+        self.xu_var = ctk.DoubleVar(value=3.0)
         
         # Fixed Point
         self.x0_var = ctk.DoubleVar(value=1.0)
@@ -162,14 +162,33 @@ class Phase2Controller:
             
             # Method-specific parameters
             if params.method in ["Bisection", "False-Position"]:
-                params.xl = self.xl_var.get()
-                params.xu = self.xu_var.get()
+                try:
+                    params.xl = self.xl_var.get()
+
+                except:
+                    self.view.display_error ("Lower bound (xl) is required Bisection/False-Position methods")
+                    return
+                try:
+                    params.xu = self.xu_var.get()
+                except:
+                    self.view.display_error ("Upper bound (xu) is required Bisection/False-Position methods")   
+                    return 
             
             if params.method == "Fixed Point":
-                params.x0 = self.x0_var.get()
+                try:
+                  params.x0 = self.x0_var.get()
+                except:
+                  self.view.display_error ("Initial guess (x0) is required for Fixed Point method")
+                  return 
                 params.g_equation = self.g_equation_var.get().strip()
+
             
             if params.method in ["Newton-Raphson", "Modified Newton-Raphson"]:
+                # try:
+                #   params.x0 = self.x0_var.get()
+                # except:
+                #   self.view.display_error ("Initial guess (x0) is required for Secant method")
+                #   return
                 params.x0 = self.x0_var.get()
                 params.derivative_equation = self.derivative_var.get().strip()
             
@@ -177,6 +196,16 @@ class Phase2Controller:
                 params.multiplicity = self.multiplicity_var.get()
             
             if params.method == "Secant":
+                # try:
+                #   params.x0 = self.x0_var.get()
+                # except:
+                #   self.view.display_error ("Initial guess (x0) is required for Secant method")
+                #   return
+                # try:
+                #   params.x1 = self.x1_var.get()
+                # except:
+                #   self.view.display_error ("Initial guess (x1) is required for Secant method")
+                #   return
                 params.x0 = self.x0_var.get()
                 params.x1 = self.x1_var.get()
             

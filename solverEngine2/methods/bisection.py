@@ -66,9 +66,23 @@ class BisectionMethod(BaseRootFindingMethod):
             xr_prev = None
             ea = float('inf')
             xr = None
-            
+        
             # Main iteration loop
-            for i in range(1, params.max_iterations + 1):
+            for i in range(1, k_required+ 1):
+                if(i>params.max_iterations):
+                    print(k_required)
+                    print(ea)
+                    self.result.root = float(xr)
+                    self.result.f_root=float(f_xr)
+                    self.result.iterations = params.max_iterations
+                    self.result.approximate_error = ea if ea != float('inf') else 0.0
+                    self.result.converged = False
+                    self.result.steps = steps
+                    self.result.error_message = f"Maximum iterations reached without convergence ,Required {k_required} iterations ."
+                    return self.finalize()
+            
+                    
+                
                 # Calculate midpoint
                 xr = (xl + xu) / D(2)
                 f_xr = self.func(xr)
@@ -79,7 +93,7 @@ class BisectionMethod(BaseRootFindingMethod):
                 if xr_prev is not None:
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs((xr - xr_prev) ) )
+                        ea = float(abs((xr - xr_prev) )/xr )
                         
                     else:
                         ea = 0.0
@@ -94,45 +108,45 @@ class BisectionMethod(BaseRootFindingMethod):
                         'f_xr': str(f_xr),
                         'f_xl': str(f_xl),
                         'f_xu': str(f_xu),
-                        'error': ea*100.0 if ea != float('inf') else None
+                        'error': str(D((ea*100.0))) if ea != float('inf') else None
                     })
                 
                 # Check if function value is near zero (root found)
-                if f_xr.isNearZero():
-                    self.result.root = float(xr)
-                    self.result.f_root=float(f_xr)
+                # if f_xr.isNearZero():
+                #     self.result.root = float(xr)
+                #     self.result.f_root=float(f_xr)
 
-                    self.result.iterations = i
-                    self.result.approximate_error = ea if ea != float('inf') else 0.0
-                    self.result.converged = True
-                    if params.step_by_step:
-                        steps.append({
-                            'type': 'converged',
-                            'message': 'f(xr) is near zero. Root found.',
-                            'xr': str(xr),
-                            'f_xr': str(f_xr)
-                        })
-                    self.result.steps = steps
-                    return self.finalize()
+                #     self.result.iterations = i
+                #     self.result.approximate_error = ea if ea != float('inf') else 0.0
+                #     self.result.converged = True
+                #     if params.step_by_step:
+                #         steps.append({
+                #             'type': 'converged',
+                #             'message': 'f(xr) is near zero. Root found.',
+                #             'xr': str(xr),
+                #             'f_xr': str(f_xr)
+                #         })
+                #     self.result.steps = steps
+                #     return self.finalize()
                 
                 # Check convergence based on error
-                if ea != float('inf') and ea < float(params.epsilon):
-                    self.result.root = float(xr)
-                    self.result.f_root=float(f_xr)
+                # if ea != float('inf') and ea < float(params.epsilon):
+                #     self.result.root = float(xr)
+                #     self.result.f_root=float(f_xr)
 
-                    self.result.iterations = i
-                    self.result.approximate_error = ea
-                    self.result.converged = True
-                    if params.step_by_step:
-                        steps.append({
-                            'type': 'converged',
-                            'message': f'Approximate error ({ea:.6f}%) below tolerance ({float(params.epsilon):.6f}%)',
-                            'xr': str(xr),
-                            'f_xr': str(f_xr),
-                            'iterations': i
-                        })
-                    self.result.steps = steps
-                    return self.finalize()
+                #     self.result.iterations = i
+                #     self.result.approximate_error = ea
+                #     self.result.converged = True
+                #     if params.step_by_step:
+                #         steps.append({
+                #             'type': 'converged',
+                #             'message': f'Approximate error ({ea:.6f}%) below tolerance ({float(params.epsilon):.6f}%)',
+                #             'xr': str(xr),
+                #             'f_xr': str(f_xr),
+                #             'iterations': i
+                #         })
+                #     self.result.steps = steps
+                #     return self.finalize()
                 
                 # Update interval
                 f_xl_current = self.func(xl)
@@ -147,16 +161,23 @@ class BisectionMethod(BaseRootFindingMethod):
                     f_xl = f_xr
                 
                 xr_prev = xr
-            
-            # Max iterations reached
             self.result.root = float(xr)
             self.result.f_root=float(f_xr)
-            self.result.iterations = params.max_iterations
+
+            self.result.iterations = k_required
             self.result.approximate_error = ea if ea != float('inf') else 0.0
-            self.result.converged = False
+            self.result.converged = True
+            # Max iterations reached
+            if params.step_by_step:
+                        steps.append({
+                            'type': 'converged',
+                            'message': f'Completed all {k_required} iterations. Final error: {ea:.6f}',
+
+                            'xr': str(xr),
+                            'f_xr': str(f_xr),
+                            'iterations':k_required
+                        })
             self.result.steps = steps
-            self.result.error_message = "Maximum iterations reached without convergence"
-            
         except Exception as e:
             self.result.error_message = f"Error in Bisection method: {str(e)}"
         

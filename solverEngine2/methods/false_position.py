@@ -73,7 +73,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                 denominator = f_xu - f_xl
                 
                 # Avoid division by zero
-                if denominator == D(0):
+                if denominator.isNearZero():
                     self.result.error_message = "Division by zero in false position formula"
                     return self.result
                 
@@ -86,7 +86,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                 if xr_prev is not None:
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs((xr - xr_prev) ) )
+                        ea = float(abs(xr - xr_prev ) / xr)
                     else:
                         ea = 0.0
                 
@@ -100,7 +100,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                         'f_xr': str(f_xr),
                         'f_xl': str(f_xl),
                         'f_xu': str(f_xu),
-                        'error': ea*100.0 if ea != float('inf') else None,
+                        'error': str(D((ea*100.0))) if ea != float('inf') else None,
                         'method': 'False Position'
                     })
                 

@@ -1,4 +1,5 @@
 
+from decimal import InvalidOperation, Overflow
 import math
 import re
 from typing import Callable
@@ -34,8 +35,14 @@ def parse_equation(equation_str: str) -> Callable:
         ns = dict(namespace)
         ns["x"] = x if isinstance(x, D) else D(x)
         try:
-            return eval(equation_str, {"__builtins__": {}}, ns)
+            result = eval(equation_str, {"__builtins__": {}}, ns)
+            return result 
+        except (Overflow, InvalidOperation) as e:
+            # Return a signal value for overflow
+            raise ValueError(f"Overflow: Value too large to compute")
         except Exception as e:
-            raise ValueError(f"Error evaluating equation: {str(e)}")
+            # raise ValueError(f"Error evaluating equation: {str(e)}")
+            raise ValueError(f"Error evaluating equation: {type(e).__name__}: {str(e)}")
+
     
     return func

@@ -848,7 +848,10 @@ class Phase2View:
         ).pack(anchor="w", pady=(0, 10))
         
         # Create matplotlib figure
-        self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
+        # self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
+        # self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+        # self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
+        self.plot_figure = Figure(figsize=(10, 4), dpi=100, facecolor='#2b2b2b')
         self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         
@@ -904,56 +907,139 @@ class Phase2View:
             
             # Clear and create new plot
             self.plot_figure.clear()
-            ax = self.plot_figure.add_subplot(111)
-            ax.set_facecolor('#1f1f1f')
+            
+            # ax = self.plot_figure.add_subplot(111)
+            # ax.set_facecolor('#1f1f1f')
             
             # Plot based on method
+            # if method == "Fixed Point" and g_equation:
+            #     # For Fixed Point: plot both f(x), g(x), and y=x
+            #     try:
+            #         g_func = parse_equation(g_equation)
+            #         g_vals = [float(g_func(x)) for x in x_vals]
+                    
+            #         ax.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
+            #         ax.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
+            #         ax.set_title(f'Fixed Point: x = g(x)', color='white', fontsize=14)
+            #         ax.set_ylabel('y', color='white', fontsize=12)
+            #     except:
+            #         # If g(x) fails, just plot f(x)
+            #         ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+            #         ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+            #         ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+            #         ax.set_ylabel('f(x)', color='white', fontsize=12)
+            # else:
+            #     # For all other methods: plot f(x)
+            #     ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+            #     ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+            #     ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+            #     ax.set_ylabel('f(x)', color='white', fontsize=12)
+            
+            # # Add x and y axes
+            # ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
             if method == "Fixed Point" and g_equation:
-                # For Fixed Point: plot both f(x), g(x), and y=x
                 try:
                     g_func = parse_equation(g_equation)
                     g_vals = [float(g_func(x)) for x in x_vals]
                     
-                    ax.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
-                    ax.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
-                    ax.set_title(f'Fixed Point: x = g(x)', color='white', fontsize=14)
-                    ax.set_ylabel('y', color='white', fontsize=12)
-                except:
-                    # If g(x) fails, just plot f(x)
+                    # Create two subplots side by side
+                    ax1 = self.plot_figure.add_subplot(121)  # Left plot
+                    ax2 = self.plot_figure.add_subplot(122)  # Right plot
+                    
+                    # LEFT PLOT: g(x) and y=x
+                    ax1.set_facecolor('#1f1f1f')
+                    ax1.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
+                    ax1.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
+                    ax1.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                    ax1.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                    ax1.grid(True, alpha=0.3, color='gray')
+                    ax1.set_xlabel('x', color='white', fontsize=11)
+                    ax1.set_ylabel('y', color='white', fontsize=11)
+                    ax1.set_title('Fixed Point: x = g(x)', color='white', fontsize=12)
+                    ax1.tick_params(colors='white', labelsize=9)
+                    for spine in ax1.spines.values():
+                        spine.set_color('white')
+                    ax1.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                    
+                    # RIGHT PLOT: Original function f(x)
+                    ax2.set_facecolor('#1f1f1f')
+                    ax2.plot(x_vals, y_vals, 'lime', linewidth=2, label='f(x)')
+                    ax2.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+                    ax2.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                    ax2.grid(True, alpha=0.3, color='gray')
+                    ax2.set_xlabel('x', color='white', fontsize=11)
+                    ax2.set_ylabel('f(x)', color='white', fontsize=11)
+                    ax2.set_title(f'Original: f(x) = {equation}', color='white', fontsize=12)
+                    ax2.tick_params(colors='white', labelsize=9)
+                    for spine in ax2.spines.values():
+                        spine.set_color('white')
+                    ax2.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                    
+                except Exception as e:
+                    # If g(x) parsing fails, show error and just plot f(x)
+                    ax = self.plot_figure.add_subplot(111)
+                    ax.set_facecolor('#1f1f1f')
                     ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
                     ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                    ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+                    ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+                    ax.set_title(f'f(x) = {equation} (g(x) error)', color='white', fontsize=14)
+                    ax.set_xlabel('x', color='white', fontsize=12)
                     ax.set_ylabel('f(x)', color='white', fontsize=12)
+                    ax.grid(True, alpha=0.3, color='gray')
+                    ax.tick_params(colors='white')
+                    for spine in ax.spines.values():
+                        spine.set_color('white')
+            
+            # ALL OTHER METHODS - SINGLE PLOT
             else:
-                # For all other methods: plot f(x)
+                ax = self.plot_figure.add_subplot(111)
+                ax.set_facecolor('#1f1f1f')
+                
+                # Plot f(x)
                 ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
                 ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+                ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+                
+                # Highlight interval for interval-based methods
+                if method in ["Bisection", "False-Position"]:
+                    ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
+                    ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
+                
+                # Styling
+                ax.grid(True, alpha=0.3, color='gray')
+                ax.set_xlabel('x', color='white', fontsize=12)
                 ax.set_ylabel('f(x)', color='white', fontsize=12)
-            
-            # Add x and y axes
-            ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-            
-            # Highlight interval for interval-based methods
-            if method in ["Bisection", "False-Position"]:
-                ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
-                ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
-            
-            # Styling
-            ax.grid(True, alpha=0.3, color='gray')
-            ax.set_xlabel('x', color='white', fontsize=12)
-            ax.tick_params(colors='white')
-            ax.spines['bottom'].set_color('white')
-            ax.spines['top'].set_color('white')
-            ax.spines['left'].set_color('white')
-            ax.spines['right'].set_color('white')
-            ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+                ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+                ax.tick_params(colors='white')
+                for spine in ax.spines.values():
+                    spine.set_color('white')
+                ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
             
             self.plot_figure.tight_layout()
             self.plot_canvas.draw()
             
         except Exception as e:
             self.display_error(f"Error plotting function: {str(e)}")
+            # Highlight interval for interval-based methods
+        #     if method in ["Bisection", "False-Position"]:
+        #         ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
+        #         ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
+            
+        #     # Styling
+        #     ax.grid(True, alpha=0.3, color='gray')
+        #     ax.set_xlabel('x', color='white', fontsize=12)
+        #     ax.tick_params(colors='white')
+        #     ax.spines['bottom'].set_color('white')
+        #     ax.spines['top'].set_color('white')
+        #     ax.spines['left'].set_color('white')
+        #     ax.spines['right'].set_color('white')
+        #     ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+            
+        #     self.plot_figure.tight_layout()
+        #     self.plot_canvas.draw()
+            
+        # except Exception as e:
+        #     self.display_error(f"Error plotting function: {str(e)}")
     
     def display_result(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
@@ -970,7 +1056,6 @@ class Phase2View:
         elif (method == "Secant"):
             self.display_result_secant(result)
             return
-        
         self.output_text.insert("end", "="*70 + "\n")
         self.output_text.insert("end", f"{method.upper()} METHOD RESULTS\n")
         self.output_text.insert("end", "="*70 + "\n\n")
@@ -979,59 +1064,88 @@ class Phase2View:
             self.output_text.insert("end", f"⚠ Warning: {result.error_message}\n\n")
         
         if result.root is not None:
-            # Get significant figures
             sig_figs = get_sig_figs()
             root_d = D(result.root)
-            f_root_d=D(result.f_root)
+            f_root_d = D(result.f_root)
+            approximate_error = D(result.approximate_error)
             
             self.output_text.insert("end", f"Approximate Root: {root_d}\n")
             self.output_text.insert("end", f"Function value at root f(xr): {f_root_d}\n")
-
             self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
-            self.output_text.insert("end", f"Approximate Relative Error: {result.approximate_error:.6f}%\n")
+            self.output_text.insert("end", f"Approximate Relative Error: {approximate_error}\n")
             self.output_text.insert("end", f"Execution Time: {result.execution_time:.6f} seconds\n")
             self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
             self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
             
-            # Display step-by-step if available
             if result.steps:
                 self.output_text.insert("end", "\n" + "="*70 + "\n")
                 self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n")
                 self.output_text.insert("end", "="*70 + "\n\n")
+                if method in ["Bisection", "False-Position"]:
+                  self.display_interval_steps(result.steps, sig_figs)
+                elif method == "Fixed Point":
+                  self.display_fixed_point_steps(result.steps, sig_figs)
+        # self.output_text.insert("end", "="*70 + "\n")
+        # self.output_text.insert("end", f"{method.upper()} METHOD RESULTS\n")
+        # self.output_text.insert("end", "="*70 + "\n\n")
+        
+        # if result.error_message:
+        #     self.output_text.insert("end", f"⚠ Warning: {result.error_message}\n\n")
+        
+        # if result.root is not None:
+        #     # Get significant figures
+        #     sig_figs = get_sig_figs()
+        #     root_d = D(result.root)
+        #     f_root_d=D(result.f_root)
+            
+        #     self.output_text.insert("end", f"Approximate Root: {root_d}\n")
+        #     self.output_text.insert("end", f"Function value at root f(xr): {f_root_d}\n")
+
+        #     self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
+        #     self.output_text.insert("end", f"Approximate Relative Error: {result.approximate_error:.6f}%\n")
+        #     self.output_text.insert("end", f"Execution Time: {result.execution_time:.6f} seconds\n")
+        #     self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
+        #     self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
+            
+        #     # Display step-by-step if available
+        #     if result.steps:
+        #         self.output_text.insert("end", "\n" + "="*70 + "\n")
+        #         self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n")
+        #         self.output_text.insert("end", "="*70 + "\n\n")
                 
-                for step in result.steps:
-                    if step['type'] == 'info':
-                        self.output_text.insert("end", f"{step['message']}\n")
-                        if 'xl' in step:
-                            self.output_text.insert("end", f"f(Xl) = f({step['xl']}) = {step['f_xl']}\n")
-                            self.output_text.insert("end", f"f(Xu) = f({step['xu']}) = {step['f_xu']}\n")
-                        if 'required_iterations' in step:
-                            self.output_text.insert("end", f"Required iterations: {step['required_iterations']}\n\n")
+        #         for step in result.steps:
+        #             if step['type'] == 'info':
+        #                 self.output_text.insert("end", f"{step['message']}\n")
+        #                 if 'xl' in step:
+        #                     self.output_text.insert("end", f"f(Xl) = f({step['xl']}) = {step['f_xl']}\n")
+        #                     self.output_text.insert("end", f"f(Xu) = f({step['xu']}) = {step['f_xu']}\n")
+        #                 if 'required_iterations' in step:
+        #                     self.output_text.insert("end", f"Required iterations: {step['required_iterations']}\n\n")
                         
-                        # Create table header
-                        col_width = sig_figs + 7
-                        self.output_text.insert("end", f"{'Iter':<6} {'Xl':<{col_width}} {'Xu':<{col_width}} {'Xr':<{col_width}} {'f(Xr)':<15} {'Error %':<15}\n")
-                        self.output_text.insert("end", "-"*100 + "\n")
+        #                 # Create table header
+        #                 col_width = sig_figs + 7
+        #                 self.output_text.insert("end", f"{'Iter':<6} {'Xl':<{col_width}} {'Xu':<{col_width}} {'Xr':<{col_width}} {'f(Xr)':<15} {'Error %':<15}\n")
+        #                 self.output_text.insert("end", "-"*100 + "\n")
                     
-                    elif step['type'] == 'iteration':
-                        error_str = f"{step['error']:.6f}" if step['error'] is not None else "N/A"
-                        col_width = max(15, sig_figs + 7)
+        #             elif step['type'] == 'iteration':
+        #                 error_str = f"{step['error']:.6f}" if step['error'] is not None else "N/A"
+        #                 col_width = max(15, sig_figs + 7)
                         
-                        self.output_text.insert("end", 
-                            f"{step['iteration']:<6} "
-                            f"{step.get('xl', 'N/A'):<{col_width}} "
-                            f"{step.get('xu', 'N/A'):<{col_width}} "
-                            f"{step.get('xr', 'N/A'):<{col_width}} "
-                            f"{step.get('f_xr', 'N/A'):<{col_width}} "
-                            f"{error_str:<15}\n"
-                        )
+        #                 self.output_text.insert("end", 
+        #                     f"{step['iteration']:<6} "
+        #                     f"{step.get('xl', 'N/A'):<{col_width}} "
+        #                     f"{step.get('xu', 'N/A'):<{col_width}} "
+        #                     f"{step.get('xr', 'N/A'):<{col_width}} "
+        #                     f"{step.get('f_xr', 'N/A'):<{col_width}} "
+        #                     f"{error_str:<15}\n"
+        #                 )
                     
-                    elif step['type'] == 'converged':
-                        self.output_text.insert("end", f"\n{step['message']}\n")
-                        if 'xr' in step:
-                            self.output_text.insert("end", f"Final xr: {step['xr']}\n")
-                        if 'f_xr' in step:
-                            self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
+        #             elif step['type'] == 'converged':
+        #                 self.output_text.insert("end", f"\n{step['message']}\n")
+        #                 if 'xr' in step:
+        #                     self.output_text.insert("end", f"Final xr: {step['xr']}\n")
+        #                 if 'f_xr' in step:
+        #                     self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
     
     def display_error(self, message: str):
         """Display an error message"""
@@ -1040,7 +1154,95 @@ class Phase2View:
         self.output_text.insert("end", "ERROR\n")
         self.output_text.insert("end", "="*70 + "\n\n")
         self.output_text.insert("end", f"{message}\n")
+        
+    def display_interval_steps(self, steps: list, sig_figs: int):
+      col_width = sig_figs + 7
     
+    # Find the first info step for initial values
+      for step in steps:
+        if step['type'] == 'info':
+            if 'xl' in step and 'xu' in step:
+                self.output_text.insert("end", f"Initial interval: [{step['xl']}, {step['xu']}]\n")
+                if 'f_xl' in step and 'f_xu' in step:
+                    self.output_text.insert("end", f"f(Xl) = f({step['xl']}) = {step['f_xl']}\n")
+                    self.output_text.insert("end", f"f(Xu) = f({step['xu']}) = {step['f_xu']}\n")
+            if 'required_iterations' in step:
+                self.output_text.insert("end", f"Required iterations: {step['required_iterations']}\n\n")
+            break
+    
+    # Print table header
+      self.output_text.insert("end", 
+        f"{'Iter':<6} {'Xl':<{col_width}} {'Xu':<{col_width}} "
+        f"{'Xr':<{col_width}} {'f(Xr)':<{col_width}} {'Error %':<15}\n"
+      )
+      self.output_text.insert("end", "-"*100 + "\n")
+    
+    # Print iteration steps
+      for step in steps:
+        if step['type'] == 'iteration':
+            error_str = step['error'] if step['error'] is not None else "N/A"
+            self.output_text.insert("end", 
+                f"{step['iteration']:<6} "
+                f"{step.get('xl', 'N/A'):<{col_width}} "
+                f"{step.get('xu', 'N/A'):<{col_width}} "
+                f"{step.get('xr', 'N/A'):<{col_width}} "
+                f"{step.get('f_xr', 'N/A'):<{col_width}} "
+                f"{error_str}\n"
+            )
+        elif step['type'] == 'converged':
+            self.output_text.insert("end", f"\n{step['message']}\n")
+            if 'xr' in step:
+                self.output_text.insert("end", f"Final xr: {step['xr']}\n")
+            if 'f_xr' in step:
+                self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
+
+    def display_fixed_point_steps(self, steps: list, sig_figs: int):
+      col_width = sig_figs + 7
+    
+    # Find the first info step for initial values
+      for step in steps:
+        if step['type'] == 'info':
+            self.output_text.insert("end", f"{step['message']}\n")
+            self.output_text.insert("end", f"Equation: x = {step['g_equation']}\n")
+            self.output_text.insert("end", f"x₀ = {step['x0']}\n")
+            self.output_text.insert("end", f"ε = {step['epsilon']}\n")
+            if 'convergence_prediction' in step:
+                self.output_text.insert("end", f"Prediction: {step['convergence_prediction']}\n\n")
+            
+            
+            
+            break
+    
+    # Print table header for Fixed Point
+      self.output_text.insert("end", 
+        f"{'Iter':<6} {'x_current':<{col_width}} "
+        f"{'g(x_current)':<{col_width}} {'f(x_next)':<{col_width}} {'Error %':<15}\n"
+      )
+      self.output_text.insert("end", "-"*100 + "\n")
+    
+    # Print iteration steps
+      for step in steps:
+        if step['type'] == 'iteration':
+            error_str = step['error'] if step['error'] is not None else "N/A"
+            x_current = step.get('x_current', 'N/A')
+            g_x_current=step.get('g_x_current','N/A')
+            f_x_next=step.get('f_x_next','N/A')
+            if x_current is not None and g_x_current is not None and f_x_next is not None  :     
+                self.output_text.insert("end", 
+                    f"{step['iteration']-1:<6} "
+                    f"{x_current:<{col_width}} "
+                    f"{g_x_current:<{col_width}} "
+                    f"{f_x_next:<{col_width}} "
+                    
+                    f"{error_str}\n"
+                )
+        elif step['type'] == 'converged':
+            self.output_text.insert("end", f"\n{step['message']}\n")
+            if 'xr' in step:
+                self.output_text.insert("end", f"Final xr: {step['xr']}\n")
+            if 'f_xr' in step:
+                self.output_text.insert("end", f"f(xr): {step['f_xr']}\n") 
+
     def display_result_newton(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
 
