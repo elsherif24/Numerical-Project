@@ -309,9 +309,10 @@ class Phase2App:
             height=40,
             corner_radius=8,
             fg_color="transparent",
-            border_width=2
+            border_width=2,
+            
         )
-        back_btn.place(x=15, y=15)
+        back_btn.place(x=1100, y=15)
 
 
 def main():
