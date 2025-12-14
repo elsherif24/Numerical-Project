@@ -399,6 +399,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from sympy import Abs
 from solverEngine2.base.equation_parser import parse_equation
 from solverEngine2.base.data_classes import RootFinderResult
 from D import D, get_sig_figs
@@ -930,11 +931,51 @@ class Phase2View:
         try:
             # func = parse_equation(equation)
             import sympy as sp
+            import numpy as np
+
 
             equation_str = equation.replace("^", "**")
-            x = sp.symbols("x")
-            expr = sp.sympify(equation_str)
-            func = sp.lambdify(x, expr, "math")
+            # expr = sp.sympify(equation_str)
+            
+            x = sp.symbols("x", real=True)
+
+
+            # x = sp.symbols("x")
+            expr = sp.sympify(
+                equation_str,
+                locals={"real_root": sp.real_root}
+            )
+            expr = expr.replace(
+              lambda e: isinstance(e, sp.Pow)
+                  and e.exp.is_Rational
+                  and e.exp.q % 2 == 1
+                  and e.exp.q > 1,      # ⬅ avoids x^3
+              lambda e: sp.sign(e.base)
+                  * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+    )
+            print(expr)
+            f_func = sp.lambdify(x, expr, modules=["numpy"])
+
+            # def f_func(val):
+            #      res = expr.subs(x, val).evalf()
+            #      if res.is_real:
+            #         return float(res)
+            #      raise ValueError("Complex value encountered")
+                # try:
+                #   res = expr.subs(x, val).evalf()
+                #   return res 
+                # #   return float(expr.subs(x, val))
+                # except:
+                #   return np.nan
+
+                    
+            
+
+                # if res.is_real:
+                #     return float(res)
+                # return float('nan')
+            # expr = sp.sympify(equation_str)
+            # func = sp.lambdify(x, expr, "math")
             # Generate x values
             margin = (xu - xl) * 0.2
             x_min = xl - margin
@@ -944,11 +985,15 @@ class Phase2View:
             # Calculate y values for f(x)
             # y_vals = [float(func(x)) for x in x_vals]
             y_vals = []
-            for x_val in x_vals:
-              try:
-                y_vals.append(float(func(x_val)))
-              except:
-                y_vals.append(np.nan)
+            y_vals = f_func(x_vals)
+            y_vals = np.where(np.isfinite(y_vals), y_vals, np.nan)
+            # for x_val in x_vals:
+            #   try:
+            #     y_vals.append((float(f_func(x_val))))
+            #   except:
+            #     y_vals.append(np.nan)
+            print(x_vals)
+            print(y_vals)
             # Clear and create new plot
             self.plot_figure.clear()
             
@@ -983,16 +1028,35 @@ class Phase2View:
             # ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
             if method == "Fixed Point" and g_equation:
                 try:
+                    g_equation_str = g_equation.replace("^", "**")
+                    g_expr = sp.sympify(
+                        g_equation_str,
+                        locals={"real_root": sp.real_root}
+                    )
+                    
+                    g_expr = g_expr.replace(
+                        lambda e: isinstance(e, sp.Pow)
+                                  and e.exp.is_Rational
+                                  and e.exp.q % 2 == 1,
+                        lambda e: sp.real_root(e.base, e.exp.q)
+                    )
+                    
+                    def g_func(val):
+                        res = g_expr.subs(x, val).evalf()
+                        if res.is_real:
+                            return float(res)
+                        return float('nan')
+                    
                     # g_func = parse_equation(g_equation)
                     # g_vals = [float(g_func(x)) for x in x_vals]
-                    g_equation_str = g_equation.replace("^", "**")
-                    g_expr = sp.sympify(g_equation_str)
-                    g_func = sp.lambdify(x, g_expr, "math")
+                    # g_equation_str = g_equation.replace("^", "**")
+                    # g_expr = sp.sympify(g_equation_str)
+                    # g_func = sp.lambdify(x, g_expr, "math")
                 
                     g_vals = []
                     for x_val in x_vals:
                       try:
-                        g_vals.append(float(g_func(x_val)))
+                        g_vals.append((g_func(x_val)))
                       except:
                         g_vals.append(np.nan)
                     # Create two subplots side by side

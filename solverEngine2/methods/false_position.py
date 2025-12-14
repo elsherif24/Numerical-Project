@@ -3,9 +3,91 @@ import math
 from solverEngine2.methods.base_method import BaseRootFindingMethod
 from solverEngine2.base.data_classes import RootFinderParameters, RootFinderResult
 from D import D
+import sympy as sp
 
 
 class FalsePositionMethod(BaseRootFindingMethod):
+    def make_function(self, equation_str):
+    #    equation_str = equation_str.replace("^", "**")
+    #    x = sp.symbols("x")
+
+    #    expr = sp.sympify(
+    #     equation_str,
+    #     locals={"real_root": sp.real_root}
+    # )
+       equation_str = equation_str.replace("^", "**")
+       x = sp.symbols("x", real=True)
+
+       expr = sp.sympify(
+        equation_str,
+        locals={"real_root": sp.real_root}
+    )
+
+    # Automatically replace fractional powers x**(1/3)
+    #    expr = expr.replace(
+    #     lambda e: isinstance(e, sp.Pow)
+    #               and e.exp.is_Rational
+    #               and e.exp.q % 2 == 1,
+    #     lambda e: sp.real_root(e.base, e.exp.q)
+    # )
+       expr = expr.replace(
+        lambda e: (
+        isinstance(e, sp.Pow)
+        and e.exp.is_Rational
+        and e.exp.q > 1        # ⬅ protects x^3
+        and e.exp.q % 2 == 1
+         ),
+        lambda e: (
+        sp.sign(e.base)
+        * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+            )
+         )
+       f_numeric = sp.lambdify(x, expr, modules=["math"])
+    #    def f(val):
+    #      res = expr.subs(x, val).evalf()
+    #      if res.is_real:
+    #         return float(res)
+    #      raise ValueError("Complex value encountered")
+
+    #    return f
+        
+       def f(val):
+        try:
+            res = f_numeric(val)
+            if isinstance(res, complex):
+                raise ValueError("Complex value encountered")
+            return float(res)
+        except Exception as e:
+            raise ValueError(str(e))
+
+       return f
+    def func_guard(self, x, f):
+        # if not isinstance(x, D): 
+        #     x = D(x)
+        try:
+            x_float = float(x)
+            print(x_float)
+            result = f(x_float)
+            print(result)
+            # SymPy lambdify expects float
+            # realpart = float(sp.re(result))
+            # imagpart = float(sp.im(result))
+            
+            # print (result)
+            # print (realpart)
+            # print (imagpart)
+            if isinstance(result,complex):
+                # print (result.imag)
+                # if abs(imagpart)< 1e-12:
+                
+                    # return D(realpart)
+                # else:
+                     raise ValueError("Complex value encountered")
+                    
+               
+            return D(float(result)) if not isinstance(result, D) else result
+        except Exception as e:
+            raise ValueError(f"Error evaluating equation: {str(e)}")
 
     def validate_parameters(self) -> bool:
         if self.params.xl >= self.params.xu:
@@ -27,21 +109,36 @@ class FalsePositionMethod(BaseRootFindingMethod):
         steps = []
         
         try:
+            f = self.make_function(params.equation)
+
             # Convert to D objects for significant figure handling
+            xl_float = float(params.xl)
+            xu_float = float(params.xu)
+            epsilon_float = float(params.epsilon)
+            f_xl = self.func_guard(xl_float, f)
+            f_xu = self.func_guard(xu_float, f)
             xl = D(params.xl)
             xu = D(params.xu)
             epsilon = D(params.epsilon)
             
             # Calculate initial function values
-            f_xl = self.func(xl)
-            f_xu = self.func(xu)
-            if not isinstance(f_xl, D): 
-                f_xl = D(f_xl)
-            if not isinstance(f_xu, D): 
-                f_xu = D(f_xu)
+            # f_xl = self.func(xl)
+            # f_xu = self.func(xu)
+            # if not isinstance(f_xl, D): 
+            #     f_xl = D(f_xl)
+            # if not isinstance(f_xu, D): 
+            #     f_xu = D(f_xu)
             
             # Check if root exists in interval (Bracketing condition)
-            if f_xl * f_xu > D(0):
+            # if f_xl * f_xu > D(0):
+            #     self.result.error_message = (
+            #         f"No root exists in interval [{xl}, {xu}].\n"
+            #         f"f({xl}) = {f_xl}\n"
+            #         f"f({xu}) = {f_xu}\n"
+            #         f"Both values have the same sign."
+            #     )
+            #     return self.result
+            if float(f_xl) * float(f_xu) > 0:
                 self.result.error_message = (
                     f"No root exists in interval [{xl}, {xu}].\n"
                     f"f({xl}) = {f_xl}\n"
@@ -64,7 +161,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
             xr_prev = None
             ea = float('inf')
             xr = None
-            
+            significant_digits = None
             # Main iteration loop
             for i in range(1, params.max_iterations + 1):
                 # False Position formula: xr = (xl*f(xu) - xu*f(xl)) / (f(xu) - f(xl))
@@ -78,7 +175,8 @@ class FalsePositionMethod(BaseRootFindingMethod):
                     return self.result
                 
                 xr = numerator / denominator
-                f_xr = self.func(xr)
+                # f_xr = self.func(xr)
+                f_xr = self.func_guard(float(xr), f)
                 if not isinstance(f_xr, D): 
                     f_xr = D(f_xr)
                 
@@ -86,7 +184,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                 if xr_prev is not None:
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs(xr - xr_prev ) / xr)
+                        ea = float(abs(xr - xr_prev  / xr))
                         significant_digits = self.calculate_significant_digits(ea)  # Inherited method
 
                     else:

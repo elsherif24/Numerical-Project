@@ -8,21 +8,88 @@ import sympy as sp
 
 class BisectionMethod(BaseRootFindingMethod):
     
+    # def make_function(self, equation_str):
+    #     """Parse equation using SymPy like in ModifiedNewtonMethod"""
+    #     equation_str = equation_str.replace("^", "**")
+    #     x = sp.symbols("x")
+    #     expr = sp.sympify(equation_str)
+    #     # f = sp.lambdify(x, expr, "math"#)
+    #     def f(val):
+    #         return (expr.subs(x,val).evalf())
+    #     return f
     def make_function(self, equation_str):
-        """Parse equation using SymPy like in ModifiedNewtonMethod"""
-        equation_str = equation_str.replace("^", "**")
-        x = sp.symbols("x")
-        expr = sp.sympify(equation_str)
-        f = sp.lambdify(x, expr, "math")
-        return f
-    
+      equation_str = equation_str.replace("^", "**")
+      x = sp.symbols("x", real=True)
+
+      expr = sp.sympify(
+        equation_str,
+        locals={"real_root": sp.real_root}
+    )
+
+    # # Automatically replace fractional powers x**(1/3)
+    #  expr = expr.replace(
+    #     lambda e: isinstance(e, sp.Pow)
+    #               and e.exp.is_Rational
+    #               and e.exp.q % 2 == 1,
+    #     lambda e: sp.real_root(e.base, e.exp.q)
+    # )
+      expr = expr.replace(
+        lambda e: (
+        isinstance(e, sp.Pow)
+        and e.exp.is_Rational
+        and e.exp.q > 1        # ⬅ protects x^3
+        and e.exp.q % 2 == 1
+         ),
+        lambda e: (
+        sp.sign(e.base)
+        * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+            )
+         )
+      f_numeric = sp.lambdify(x, expr, modules=["math"])
+
+    #  def f(val):
+    #      res = expr.subs(x, val).evalf()
+    #      if res.is_real:
+    #         return float(res)
+    #      raise ValueError("Complex value encountered")
+
+    #    return f
+      def f(val):
+        try:
+            res = f_numeric(val)
+            if isinstance(res, complex):
+                raise ValueError("Complex value encountered")
+            return float(res)
+        except Exception as e:
+            raise ValueError(str(e))
+
+      return f
     def func_guard(self, x, f):
         """Safe function evaluation with D class support"""
-        if not isinstance(x, D): 
-            x = D(x)
+        # if not isinstance(x, D): 
+        #     x = D(x)
         try:
-            result = f(float(x))  # SymPy lambdify expects float
-            return D(result) if not isinstance(result, D) else result
+            x_float = float(x)
+            print(x_float)
+            result = f(x_float)
+            print(result)
+            # SymPy lambdify expects float
+            # realpart = float(sp.re(result))
+            # imagpart = float(sp.im(result))
+            
+            # print (result)
+            # print (realpart)
+            # print (imagpart)
+            if isinstance(result,complex):
+                # print (result.imag)
+                # if abs(imagpart)< 1e-12:
+                
+                    # return D(realpart)
+                # else:
+                     raise ValueError("Complex value encountered")
+                    
+               
+            return D(float(result)) if not isinstance(result, D) else result
         except Exception as e:
             raise ValueError(f"Error evaluating equation: {str(e)}")
 
@@ -47,8 +114,14 @@ class BisectionMethod(BaseRootFindingMethod):
         
         try:
             f = self.make_function(params.equation)
-
+            xl_float = float(params.xl)
+            xu_float = float(params.xu)
+            epsilon_float = float(params.epsilon)
+            f_xl = self.func_guard(xl_float, f)
+            f_xu = self.func_guard(xu_float, f)
             # Convert to D objects for significant figure handling
+            # f_xl = self.func_guard(xl, f)
+            # f_xu = self.func_guard(xu, f)
             xl = D(params.xl)
             xu = D(params.xu)
             epsilon = D(params.epsilon)
@@ -56,14 +129,21 @@ class BisectionMethod(BaseRootFindingMethod):
             # Check if root exists in interval
             # f_xl = self.func(xl)
             # f_xu = self.func(xu)
-            f_xl = self.func_guard(xl, f)
-            f_xu = self.func_guard(xu, f)
+         
             # if not isinstance(f_xl, D): 
             #     f_xl = D(f_xl)
             # if not isinstance(f_xu, D): 
             #     f_xu = D(f_xu)
             
-            if f_xl * f_xu > D(0):
+            # if f_xl * f_xu > D(0):
+            #     self.result.error_message = (
+            #         f"No root exists in interval [{xl}, {xu}].\n"
+            #         f"f({xl}) = {f_xl}\n"
+            #         f"f({xu}) = {f_xu}\n"
+            #         f"Both values have the same sign."
+            #     )
+            #     return self.result
+            if float(f_xl) * float(f_xu) > 0:
                 self.result.error_message = (
                     f"No root exists in interval [{xl}, {xu}].\n"
                     f"f({xl}) = {f_xl}\n"
@@ -90,7 +170,7 @@ class BisectionMethod(BaseRootFindingMethod):
             xr_prev = None
             ea = float('inf')
             xr = None
-        
+            significant_digits = None
             # Main iteration loop
             for i in range(1, k_required+ 1):
                 if(i>params.max_iterations):
@@ -118,7 +198,9 @@ class BisectionMethod(BaseRootFindingMethod):
                 
                 # Calculate midpoint
                 xr = (xl + xu) / D(2)
-                f_xr = self.func(xr)
+                # f_xr = self.func(xr)
+                f_xr = self.func_guard(float(xr), f)
+
                 if not isinstance(f_xr, D): 
                     f_xr = D(f_xr)
                 
@@ -126,7 +208,7 @@ class BisectionMethod(BaseRootFindingMethod):
                 if xr_prev is not None:
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs((xr - xr_prev) )/xr )
+                        ea = float(abs((xr - xr_prev) /xr) )
                         significant_digits = self.calculate_significant_digits(ea)  # Inherited method
 
                     else:
@@ -186,7 +268,9 @@ class BisectionMethod(BaseRootFindingMethod):
                 #     return self.finalize()
                 
                 # Update interval
-                f_xl_current = self.func(xl)
+                # f_xl_current = self.func(xl)
+                f_xl_current = self.func_guard(float(xl), f)
+
                 if not isinstance(f_xl_current, D): 
                     f_xl_current = D(f_xl_current)
                 

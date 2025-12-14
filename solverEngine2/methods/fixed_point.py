@@ -12,39 +12,187 @@ import sympy as sp
 
 
 class FixedPointMethod(BaseRootFindingMethod):
-    def analyze_convergence_simple(self, g_equation: str, x0: float) -> str:
-        """
-        Simple convergence analysis using symbolic derivative at x0.
-        Returns a string describing the convergence behavior.
-        """
+    def make_function(self, equation_str):
+        """Parse equation using SymPy for any function (f(x) or g(x))"""
+        equation_str = equation_str.replace("^", "**")
+        x = sp.symbols("x")
+
+        expr = sp.sympify(
+            equation_str,
+            locals={"real_root": sp.real_root}
+        )
+
+        # Automatically replace fractional powers x**(1/3)
+        # expr = expr.replace(
+        #     lambda e: isinstance(e, sp.Pow)
+        #               and e.exp.is_Rational
+        #               and e.exp.q % 2 == 1,
+        #     lambda e: sp.real_root(e.base, e.exp.q)
+        # )
+        expr = expr.replace(
+        lambda e: (
+        isinstance(e, sp.Pow)
+        and e.exp.is_Rational
+        and e.exp.q > 1        # ⬅ protects x^3
+        and e.exp.q % 2 == 1
+         ),
+        lambda e: (
+        sp.sign(e.base)
+        * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+            )
+         )
+        f_numeric = sp.lambdify(x, expr, modules=["math"])
+
+        # def f(val):
+        #     res = expr.subs(x, val).evalf()
+        #     if res.is_real:
+        #         return float(res)
+        #     raise ValueError("Complex value encountered")
+
+        # return f
+        def f(val):
+          try:
+            res = f_numeric(val)
+            if isinstance(res, complex):
+                raise ValueError("Complex value encountered")
+            return float(res)
+          except Exception as e:
+            raise ValueError(str(e))
+
+        return f
+        
+    
+    def func_guard(self, x, f):
+        """Safe function evaluation with D class support"""
         try:
+            x_float = float(x)
+            result = f(x_float)
             
-            # Get symbolic derivative
-            x = sp.symbols('x')
-            expr = sp.sympify(g_equation.replace('^', '**'))
-            derivative = sp.diff(expr, x)
+            if isinstance(result, complex):
+                raise ValueError("Complex value encountered")
+                    
+            return D(float(result)) if not isinstance(result, D) else result
+        except Exception as e:
+            raise ValueError(f"Error evaluating equation: {str(e)}")
+    
+    # def analyze_convergence_simple(self, g_equation: str, x0: float) -> str:
+    #     """
+    #     Simple convergence analysis using symbolic derivative at x0.
+    #     Returns a string describing the convergence behavior.
+    #     """
+    #     try:
+    #         # Get symbolic derivative
+    #         x = sp.symbols('x')
+    #         g_expr = sp.sympify(g_equation.replace('^', '**'))
+    #         derivative = sp.diff(g_expr, x)
             
-            # Evaluate at x0
-            g_prime = float(derivative.subs(x, x0))
-            abs_g_prime = abs(g_prime)
+    #         # Evaluate at x0
+    #         g_prime = float(derivative.subs(x, x0))
+    #         abs_g_prime = abs(g_prime)
             
-            # Simple classification
-            if abs_g_prime < 1:
-                if g_prime >= 0:
-                    return f"Converges monotonically (|g'|={abs_g_prime:.3f} < 1, g' ≥ 0)"
-                else:
-                    return f"Converges oscillatory (|g'|={abs_g_prime:.3f} < 1, g' < 0)"
-            elif abs_g_prime > 1:
-                if g_prime >= 0:
-                    return f"Diverges monotonically (|g'|={abs_g_prime:.3f} > 1)"
-                else:
-                    return f"Diverges oscillatory (|g'|={abs_g_prime:.3f} > 1)"
-            else:
-                return f"Marginal convergence (|g'| ≈ 1)"
+    #         # Simple classification
+    #         if abs_g_prime < 1:
+    #             if g_prime >= 0:
+    #                 return f"Converges monotonically (|g'|={abs_g_prime:.3f} < 1, g' ≥ 0)"
+    #             else:
+    #                 return f"Converges oscillatory (|g'|={abs_g_prime:.3f} < 1, g' < 0)"
+    #         elif abs_g_prime > 1:
+    #             if g_prime >= 0:
+    #                 return f"Diverges monotonically (|g'|={abs_g_prime:.3f} > 1)"
+    #             else:
+    #                 return f"Diverges oscillatory (|g'|={abs_g_prime:.3f} > 1)"
+    #         else:
+    #             return f"Marginal convergence (|g'| ≈ 1)"
                 
-        except:
-            # If sympy fails, give generic message
-            return "Convergence analysis not available"
+    #     except:
+    #         # If sympy fails, give generic message
+    #         return "Convergence analysis not available"
+    def analyze_convergence_simple(self, g_equation: str, x0: float) -> str:
+     try:
+        import re
+        import sympy as sp
+
+        # 🔒 same sanitization as make_function
+        eq = g_equation.replace("^", "**")
+        eq = eq.replace(" ", "")
+
+        x = sp.symbols("x", real=True)
+
+        # 🔒 same sympify as make_function
+        expr = sp.sympify(
+            eq,
+            locals={"real_root": sp.real_root}
+        )
+
+        # 🔒 same odd-root handling
+        expr = expr.replace(
+            lambda e: (
+                isinstance(e, sp.Pow)
+                and e.exp.is_Rational
+                and e.exp.q > 1
+                and e.exp.q % 2 == 1
+            ),
+            lambda e: (
+                sp.sign(e.base)
+                * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+            )
+        )
+
+        derivative = sp.diff(expr, x)
+        g_prime = float(derivative.subs(x, x0))
+        abs_g = abs(g_prime)
+
+        if abs_g < 1:
+            return (
+                f"Converges monotonically (|g'|={abs_g:.3f} < 1)"
+                if g_prime >= 0
+                else f"Converges oscillatory (|g'|={abs_g:.3f} < 1)"
+            )
+        elif abs_g > 1:
+            return (
+                f"Diverges monotonically (|g'|={abs_g:.3f} > 1)"
+                if g_prime >= 0
+                else f"Diverges oscillatory (|g'|={abs_g:.3f} > 1)"
+            )
+        else:
+            return "Marginal convergence (|g'| ≈ 1)"
+
+     except Exception:
+        return "Convergence analysis not available"
+
+    # def analyze_convergence_simple(self, g_equation: str, x0: float) -> str:
+    #     """
+    #     Simple convergence analysis using symbolic derivative at x0.
+    #     Returns a string describing the convergence behavior.
+    #     """
+    #     try:
+            
+    #         # Get symbolic derivative
+    #         x = sp.symbols('x')
+    #         expr = sp.sympify(g_equation.replace('^', '**'))
+    #         derivative = sp.diff(expr, x)
+            
+    #         # Evaluate at x0
+    #         g_prime = float(derivative.subs(x, x0))
+    #         abs_g_prime = abs(g_prime)
+            
+    #         # Simple classification
+    #         if abs_g_prime < 1:
+    #             if g_prime >= 0:
+    #                 return f"Converges monotonically (|g'|={abs_g_prime:.3f} < 1, g' ≥ 0)"
+    #             else:
+    #                 return f"Converges oscillatory (|g'|={abs_g_prime:.3f} < 1, g' < 0)"
+    #         elif abs_g_prime > 1:
+    #             if g_prime >= 0:
+    #                 return f"Diverges monotonically (|g'|={abs_g_prime:.3f} > 1)"
+    #             else:
+    #                 return f"Diverges oscillatory (|g'|={abs_g_prime:.3f} > 1)"
+    #         else:
+    #             return f"Marginal convergence (|g'| ≈ 1)"
+                
+    #     except:
+    #         # If sympy fails, give generic message
+    #         return "Convergence analysis not available"
      
     def validate_parameters(self) -> bool:
         if not self.params.g_equation:
@@ -74,18 +222,22 @@ class FixedPointMethod(BaseRootFindingMethod):
         try:
             # Parse the g(x) equation for Fixed Point iteration
             g_func = None
-            try:
-                from solverEngine2.base.equation_parser import parse_equation
-                g_func = parse_equation(params.g_equation)
-                print(g_func)
-            except ImportError:
-                g_func = lambda x: eval(params.g_equation.replace('^', '**'), 
-                                        {"x": x, "exp": math.exp, "sin": math.sin, 
-                                         "cos": math.cos, "ln": math.log, "log10": math.log10,
-                                         "sqrt": math.sqrt, "pi": math.pi, "e": math.e})
-            except Exception as e:
-                self.result.error_message = f"Error parsing g(x) equation: {str(e)}"
-                return self.result
+            # try:
+            #     # from solverEngine2.base.equation_parser import parse_equation
+            #     # g_func = parse_equation(params.g_equation)
+            #     print(g_func)
+            # except ImportError:
+            #     g_func = lambda x: eval(params.g_equation.replace('^', '**'), 
+            #                             {"x": x, "exp": math.exp, "sin": math.sin, 
+            #                              "cos": math.cos, "ln": math.log, "log10": math.log10,
+            #                              "sqrt": math.sqrt, "pi": math.pi, "e": math.e})
+            # except Exception as e:
+            #     self.result.error_message = f"Error parsing g(x) equation: {str(e)}"
+            #     return self.result
+            f_func = self.make_function(params.equation)
+            
+            # Create g(x) function for Fixed Point iteration using the same method
+            g_func = self.make_function(params.g_equation)
             
             # Convert to D objects for significant figure handling
             x0 = D(params.x0)
@@ -110,7 +262,7 @@ class FixedPointMethod(BaseRootFindingMethod):
             xr_prev = None
             ea = float('inf')  # Absolute error
             iteration_count = 0
-            
+            significant_digits = None
             # Main iteration loop
             for i in range(1, params.max_iterations + 1):
                 iteration_count = i
@@ -119,12 +271,13 @@ class FixedPointMethod(BaseRootFindingMethod):
                 # Fixed Point iteration: x_{n+1} = g(x_n)
                 try:
                     # Evaluate g(x)
-                    g_value = g_func(xr_prev)
-                    if not isinstance(g_value, D):
-                        g_value = D(g_value)
+                    # g_value = g_func(xr_prev)
+                    g_value = self.func_guard(float(xr_prev), g_func)
+                    # if not isinstance(g_value, D):
+                    #     g_value = D(g_value)
                     xr = g_value
                 except ValueError  as e:
-                    if "Overflow" in str(e):
+                    if "Overflow" in str(e) or "too large" in str(e).lower():
                        self.result.error_message = f"Overflow at iteration {i}: Method is diverging (values too large)"
                        self.result.root = float(xr_prev) if xr_prev is not None else float(x0)
                        self.result.iterations = i - 1
@@ -152,19 +305,28 @@ class FixedPointMethod(BaseRootFindingMethod):
                 if xr_prev is not None:
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs((xr - xr_prev) )/xr )
+                        ea = float(abs((xr - xr_prev) /xr) )
                         significant_digits = self.calculate_significant_digits(ea)  # Inherited method
 
                     else:
                         ea = 0.0
                 try:
                 # Evaluate f(x) at current approximation
-                    f_xr = self.func(xr)
-                    if not isinstance(f_xr, D):
-                      f_xr = D(f_xr)
-                except (ValueError, Overflow) as e:
-                    self.result.error_message = f"Error evaluating f(x) at iteration {i}: Overflow/Divergence"
-                    break
+                    # f_xr = self.func(xr)
+                    f_xr = self.func_guard(float(xr), f_func)
+                    # if not isinstance(f_xr, D):
+                    #   f_xr = D(f_xr)
+                # except (ValueError, Overflow) as e:
+                #     self.result.error_message = f"Error evaluating f(x) at iteration {i}: Overflow/Divergence"
+                #     break
+                except ValueError as e:
+
+                    if "Overflow" in str(e) or "too large" in str(e).lower():
+                        self.result.error_message = f"Error evaluating f(x) at iteration {i}: Overflow/Divergence"
+                        break
+                    else:
+                        self.result.error_message = f"Error evaluating f(x) at iteration {i}: {str(e)}"
+                        break
                 if params.step_by_step:
                     steps.append({
                         'type': 'iteration',
@@ -179,7 +341,7 @@ class FixedPointMethod(BaseRootFindingMethod):
                         'method': 'Fixed Point'
                     })
                 
-                if f_xr == 0:
+                if float(f_xr) == 0 :
                     self.result.root = float(xr)
                     self.result.f_root = float(f_xr)
                     self.result.iterations = i
