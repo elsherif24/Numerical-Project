@@ -922,241 +922,388 @@ class Phase2View:
             corner_radius=8
         )
         self.output_text.pack(fill="both", expand=True)
-    
     def plot_equation(self, equation: str, xl: float, xu: float, method: str, g_equation: str = None):
-        """
-        Plot the equation(s) based on the selected method.
-        For Fixed Point, also plots g(x) and y=x line.
-        """
-        try:
-            # func = parse_equation(equation)
-            import sympy as sp
-            import numpy as np
 
+     try:
+        import sympy as sp
+        import numpy as np
 
-            equation_str = equation.replace("^", "**")
-            # expr = sp.sympify(equation_str)
-            
-            x = sp.symbols("x", real=True)
+        equation_str = equation.replace("^", "**")
+        x = sp.symbols("x", real=True)
 
+        # Parse f(x)
+        expr = sp.sympify(
+            equation_str,
+            locals={"real_root": sp.real_root}
+        )
+        expr = expr.replace(
+            lambda e: isinstance(e, sp.Pow)
+                and e.exp.is_Rational
+                and e.exp.q % 2 == 1
+                and e.exp.q > 1,
+            lambda e: sp.sign(e.base)
+                * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+        )
+        print(expr)
+        f_func = sp.lambdify(x, expr, modules=["numpy"])
 
-            # x = sp.symbols("x")
-            expr = sp.sympify(
-                equation_str,
-                locals={"real_root": sp.real_root}
-            )
-            expr = expr.replace(
-              lambda e: isinstance(e, sp.Pow)
-                  and e.exp.is_Rational
-                  and e.exp.q % 2 == 1
-                  and e.exp.q > 1,      # ⬅ avoids x^3
-              lambda e: sp.sign(e.base)
-                  * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
-    )
-            print(expr)
-            f_func = sp.lambdify(x, expr, modules=["numpy"])
-
-            # def f_func(val):
-            #      res = expr.subs(x, val).evalf()
-            #      if res.is_real:
-            #         return float(res)
-            #      raise ValueError("Complex value encountered")
-                # try:
-                #   res = expr.subs(x, val).evalf()
-                #   return res 
-                # #   return float(expr.subs(x, val))
-                # except:
-                #   return np.nan
-
-                    
-            
-
-                # if res.is_real:
-                #     return float(res)
-                # return float('nan')
-            # expr = sp.sympify(equation_str)
-            # func = sp.lambdify(x, expr, "math")
-            # Generate x values
-            margin = (xu - xl) * 0.2
-            x_min = xl - margin
-            x_max = xu + margin
-            x_vals = np.linspace(x_min, x_max, 500)
-            
-            # Calculate y values for f(x)
-            # y_vals = [float(func(x)) for x in x_vals]
-            y_vals = []
-            y_vals = f_func(x_vals)
-            y_vals = np.where(np.isfinite(y_vals), y_vals, np.nan)
-            # for x_val in x_vals:
-            #   try:
-            #     y_vals.append((float(f_func(x_val))))
-            #   except:
-            #     y_vals.append(np.nan)
-            print(x_vals)
-            print(y_vals)
-            # Clear and create new plot
-            self.plot_figure.clear()
-            
-            # ax = self.plot_figure.add_subplot(111)
-            # ax.set_facecolor('#1f1f1f')
-            
-            # Plot based on method
-            # if method == "Fixed Point" and g_equation:
-            #     # For Fixed Point: plot both f(x), g(x), and y=x
-            #     try:
-            #         g_func = parse_equation(g_equation)
-            #         g_vals = [float(g_func(x)) for x in x_vals]
-                    
-            #         ax.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
-            #         ax.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
-            #         ax.set_title(f'Fixed Point: x = g(x)', color='white', fontsize=14)
-            #         ax.set_ylabel('y', color='white', fontsize=12)
-            #     except:
-            #         # If g(x) fails, just plot f(x)
-            #         ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
-            #         ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-            #         ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
-            #         ax.set_ylabel('f(x)', color='white', fontsize=12)
-            # else:
-            #     # For all other methods: plot f(x)
-            #     ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
-            #     ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-            #     ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
-            #     ax.set_ylabel('f(x)', color='white', fontsize=12)
-            
-            # # Add x and y axes
-            # ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-            if method == "Fixed Point" and g_equation:
-                try:
-                    g_equation_str = g_equation.replace("^", "**")
-                    g_expr = sp.sympify(
-                        g_equation_str,
-                        locals={"real_root": sp.real_root}
-                    )
-                    
-                    g_expr = g_expr.replace(
-                        lambda e: isinstance(e, sp.Pow)
-                                  and e.exp.is_Rational
-                                  and e.exp.q % 2 == 1,
-                        lambda e: sp.real_root(e.base, e.exp.q)
-                    )
-                    
-                    def g_func(val):
-                        res = g_expr.subs(x, val).evalf()
-                        if res.is_real:
-                            return float(res)
-                        return float('nan')
-                    
-                    # g_func = parse_equation(g_equation)
-                    # g_vals = [float(g_func(x)) for x in x_vals]
-                    # g_equation_str = g_equation.replace("^", "**")
-                    # g_expr = sp.sympify(g_equation_str)
-                    # g_func = sp.lambdify(x, g_expr, "math")
+        # Generate x values
+        margin = (xu - xl) * 0.2
+        x_min = xl - margin
+        x_max = xu + margin
+        x_vals = np.linspace(x_min, x_max, 500)
+        
+        # Calculate y values for f(x)
+        y_vals = f_func(x_vals)
+        y_vals = np.where(np.isfinite(y_vals), y_vals, np.nan)
+        
+        print(x_vals)
+        print(y_vals)
+        
+        # Clear and create new plot
+        self.plot_figure.clear()
+        
+        if method == "Fixed Point" and g_equation:
+            try:
+                # Parse g(x) using the SAME approach as f(x)
+                g_equation_str = g_equation.replace("^", "**")
                 
-                    g_vals = []
-                    for x_val in x_vals:
-                      try:
-                        g_vals.append((g_func(x_val)))
-                      except:
-                        g_vals.append(np.nan)
-                    # Create two subplots side by side
-                    ax1 = self.plot_figure.add_subplot(121)  # Left plot
-                    ax2 = self.plot_figure.add_subplot(122)  # Right plot
-                    
-                    # LEFT PLOT: g(x) and y=x
-                    ax1.set_facecolor('#1f1f1f')
-                    ax1.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
-                    ax1.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
-                    ax1.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
-                    ax1.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
-                    ax1.grid(True, alpha=0.3, color='gray')
-                    ax1.set_xlabel('x', color='white', fontsize=11)
-                    ax1.set_ylabel('y', color='white', fontsize=11)
-                    ax1.set_title('Fixed Point: x = g(x)', color='white', fontsize=12)
-                    ax1.tick_params(colors='white', labelsize=9)
-                    for spine in ax1.spines.values():
-                        spine.set_color('white')
-                    ax1.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
-                    
-                    # RIGHT PLOT: Original function f(x)
-                    ax2.set_facecolor('#1f1f1f')
-                    ax2.plot(x_vals, y_vals, 'lime', linewidth=2, label='f(x)')
-                    ax2.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                    ax2.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
-                    ax2.grid(True, alpha=0.3, color='gray')
-                    ax2.set_xlabel('x', color='white', fontsize=11)
-                    ax2.set_ylabel('f(x)', color='white', fontsize=11)
-                    ax2.set_title(f'Original: f(x) = {equation}', color='white', fontsize=12)
-                    ax2.tick_params(colors='white', labelsize=9)
-                    for spine in ax2.spines.values():
-                        spine.set_color('white')
-                    ax2.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
-                    
-                except Exception as e:
-                    # If g(x) parsing fails, show error and just plot f(x)
-                    ax = self.plot_figure.add_subplot(111)
-                    ax.set_facecolor('#1f1f1f')
-                    ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
-                    ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                    ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                    ax.set_title(f'f(x) = {equation} (g(x) error)', color='white', fontsize=14)
-                    ax.set_xlabel('x', color='white', fontsize=12)
-                    ax.set_ylabel('f(x)', color='white', fontsize=12)
-                    ax.grid(True, alpha=0.3, color='gray')
-                    ax.tick_params(colors='white')
-                    for spine in ax.spines.values():
-                        spine.set_color('white')
-            
-            # ALL OTHER METHODS - SINGLE PLOT
-            else:
+                g_expr = sp.sympify(
+                    g_equation_str,
+                    locals={"real_root": sp.real_root}
+                )
+                
+                g_expr = g_expr.replace(
+                    lambda e: isinstance(e, sp.Pow)
+                        and e.exp.is_Rational
+                        and e.exp.q % 2 == 1
+                        and e.exp.q > 1,
+                    lambda e: sp.sign(e.base)
+                        * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+                )
+                
+                print("g_expr:", g_expr)
+                
+                # Create lambdified function for g(x)
+                g_func = sp.lambdify(x, g_expr, modules=["numpy"])
+                
+                # Calculate g values
+                g_vals = g_func(x_vals)
+                g_vals = np.where(np.isfinite(g_vals), g_vals, np.nan)
+                
+                # Create two subplots side by side
+                ax1 = self.plot_figure.add_subplot(121)  # Left plot
+                ax2 = self.plot_figure.add_subplot(122)  # Right plot
+                
+                # LEFT PLOT: g(x) and y=x
+                ax1.set_facecolor('#1f1f1f')
+                ax1.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
+                ax1.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
+                ax1.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                ax1.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                ax1.grid(True, alpha=0.3, color='gray')
+                ax1.set_xlabel('x', color='white', fontsize=11)
+                ax1.set_ylabel('y', color='white', fontsize=11)
+                ax1.set_title('Fixed Point: x = g(x)', color='white', fontsize=12)
+                ax1.tick_params(colors='white', labelsize=9)
+                for spine in ax1.spines.values():
+                    spine.set_color('white')
+                ax1.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                
+                # RIGHT PLOT: Original function f(x)
+                ax2.set_facecolor('#1f1f1f')
+                ax2.plot(x_vals, y_vals, 'lime', linewidth=2, label='f(x)')
+                ax2.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+                ax2.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+                ax2.grid(True, alpha=0.3, color='gray')
+                ax2.set_xlabel('x', color='white', fontsize=11)
+                ax2.set_ylabel('f(x)', color='white', fontsize=11)
+                ax2.set_title(f'Original: f(x) = {equation}', color='white', fontsize=12)
+                ax2.tick_params(colors='white', labelsize=9)
+                for spine in ax2.spines.values():
+                    spine.set_color('white')
+                ax2.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                
+            except Exception as e:
+                # If g(x) parsing fails, show error and just plot f(x)
+                print(f"Error parsing g(x): {e}")
                 ax = self.plot_figure.add_subplot(111)
                 ax.set_facecolor('#1f1f1f')
-                
-                # Plot f(x)
                 ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
                 ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
                 ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
-                
-                # Highlight interval for interval-based methods
-                if method in ["Bisection", "False-Position"]:
-                    ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
-                    ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
-                
-                # Styling
-                ax.grid(True, alpha=0.3, color='gray')
+                ax.set_title(f'f(x) = {equation} (g(x) error: {str(e)})', color='white', fontsize=14)
                 ax.set_xlabel('x', color='white', fontsize=12)
                 ax.set_ylabel('f(x)', color='white', fontsize=12)
-                ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+                ax.grid(True, alpha=0.3, color='gray')
                 ax.tick_params(colors='white')
                 for spine in ax.spines.values():
                     spine.set_color('white')
-                ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+        
+        # ALL OTHER METHODS - SINGLE PLOT
+        else:
+            ax = self.plot_figure.add_subplot(111)
+            ax.set_facecolor('#1f1f1f')
             
-            self.plot_figure.tight_layout()
-            self.plot_canvas.draw()
+            # Plot f(x)
+            ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+            ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+            ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
             
-        except Exception as e:
-            self.display_error(f"Error plotting function: {str(e)}")
             # Highlight interval for interval-based methods
-        #     if method in ["Bisection", "False-Position"]:
-        #         ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
-        #         ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
+            if method in ["Bisection", "False-Position"]:
+                ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
+                ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
             
-        #     # Styling
-        #     ax.grid(True, alpha=0.3, color='gray')
-        #     ax.set_xlabel('x', color='white', fontsize=12)
-        #     ax.tick_params(colors='white')
-        #     ax.spines['bottom'].set_color('white')
-        #     ax.spines['top'].set_color('white')
-        #     ax.spines['left'].set_color('white')
-        #     ax.spines['right'].set_color('white')
-        #     ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+            # Styling
+            ax.grid(True, alpha=0.3, color='gray')
+            ax.set_xlabel('x', color='white', fontsize=12)
+            ax.set_ylabel('f(x)', color='white', fontsize=12)
+            ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+            ax.tick_params(colors='white')
+            for spine in ax.spines.values():
+                spine.set_color('white')
+            ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+        
+        self.plot_figure.tight_layout()
+        self.plot_canvas.draw()
+        
+     except Exception as e:
+        self.display_error(f"Error plotting function: {str(e)}")
+    # def plot_equation(self, equation: str, xl: float, xu: float, method: str, g_equation: str = None):
+    #     """
+    #     Plot the equation(s) based on the selected method.
+    #     For Fixed Point, also plots g(x) and y=x line.
+    #     """
+    #     try:
+    #         # func = parse_equation(equation)
+    #         import sympy as sp
+    #         import numpy as np
+
+
+    #         equation_str = equation.replace("^", "**")
+    #         # expr = sp.sympify(equation_str)
             
-        #     self.plot_figure.tight_layout()
-        #     self.plot_canvas.draw()
+    #         x = sp.symbols("x", real=True)
+
+
+    #         # x = sp.symbols("x")
+    #         expr = sp.sympify(
+    #             equation_str,
+    #             locals={"real_root": sp.real_root}
+    #         )
+    #         expr = expr.replace(
+    #           lambda e: isinstance(e, sp.Pow)
+    #               and e.exp.is_Rational
+    #               and e.exp.q % 2 == 1
+    #               and e.exp.q > 1,      # ⬅ avoids x^3
+    #           lambda e: sp.sign(e.base)
+    #               * sp.real_root(sp.Abs(e.base), e.exp.q) ** e.exp.p
+    # )
+    #         print(expr)
+    #         f_func = sp.lambdify(x, expr, modules=["numpy"])
+
+    #         # def f_func(val):
+    #         #      res = expr.subs(x, val).evalf()
+    #         #      if res.is_real:
+    #         #         return float(res)
+    #         #      raise ValueError("Complex value encountered")
+    #             # try:
+    #             #   res = expr.subs(x, val).evalf()
+    #             #   return res 
+    #             # #   return float(expr.subs(x, val))
+    #             # except:
+    #             #   return np.nan
+
+                    
             
-        # except Exception as e:
-        #     self.display_error(f"Error plotting function: {str(e)}")
+
+    #             # if res.is_real:
+    #             #     return float(res)
+    #             # return float('nan')
+    #         # expr = sp.sympify(equation_str)
+    #         # func = sp.lambdify(x, expr, "math")
+    #         # Generate x values
+    #         margin = (xu - xl) * 0.2
+    #         x_min = xl - margin
+    #         x_max = xu + margin
+    #         x_vals = np.linspace(x_min, x_max, 500)
+            
+    #         # Calculate y values for f(x)
+    #         # y_vals = [float(func(x)) for x in x_vals]
+    #         y_vals = []
+    #         y_vals = f_func(x_vals)
+    #         y_vals = np.where(np.isfinite(y_vals), y_vals, np.nan)
+    #         # for x_val in x_vals:
+    #         #   try:
+    #         #     y_vals.append((float(f_func(x_val))))
+    #         #   except:
+    #         #     y_vals.append(np.nan)
+    #         print(x_vals)
+    #         print(y_vals)
+    #         # Clear and create new plot
+    #         self.plot_figure.clear()
+            
+    #         # ax = self.plot_figure.add_subplot(111)
+    #         # ax.set_facecolor('#1f1f1f')
+            
+    #         # Plot based on method
+    #         # if method == "Fixed Point" and g_equation:
+    #         #     # For Fixed Point: plot both f(x), g(x), and y=x
+    #         #     try:
+    #         #         g_func = parse_equation(g_equation)
+    #         #         g_vals = [float(g_func(x)) for x in x_vals]
+                    
+    #         #         ax.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
+    #         #         ax.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
+    #         #         ax.set_title(f'Fixed Point: x = g(x)', color='white', fontsize=14)
+    #         #         ax.set_ylabel('y', color='white', fontsize=12)
+    #         #     except:
+    #         #         # If g(x) fails, just plot f(x)
+    #         #         ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+    #         #         ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #         #         ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+    #         #         ax.set_ylabel('f(x)', color='white', fontsize=12)
+    #         # else:
+    #         #     # For all other methods: plot f(x)
+    #         #     ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+    #         #     ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #         #     ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+    #         #     ax.set_ylabel('f(x)', color='white', fontsize=12)
+            
+    #         # # Add x and y axes
+    #         # ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #         if method == "Fixed Point" and g_equation:
+    #             try:
+    #                 g_equation_str = g_equation.replace("^", "**")
+    #                 g_expr = sp.sympify(
+    #                     g_equation_str,
+    #                     locals={"real_root": sp.real_root}
+    #                 )
+                    
+    #                 g_expr = g_expr.replace(
+    #                     lambda e: isinstance(e, sp.Pow)
+    #                               and e.exp.is_Rational
+    #                               and e.exp.q % 2 == 1,
+    #                     lambda e: sp.real_root(e.base, e.exp.q)
+    #                 )
+                    
+    #                 def g_func(val):
+    #                     res = g_expr.subs(x, val).evalf()
+    #                     if res.is_real:
+    #                         return float(res)
+    #                     return float('nan')
+                    
+    #                 # g_func = parse_equation(g_equation)
+    #                 # g_vals = [float(g_func(x)) for x in x_vals]
+    #                 # g_equation_str = g_equation.replace("^", "**")
+    #                 # g_expr = sp.sympify(g_equation_str)
+    #                 # g_func = sp.lambdify(x, g_expr, "math")
+                
+    #                 g_vals = []
+    #                 for x_val in x_vals:
+    #                   try:
+    #                     g_vals.append((g_func(x_val)))
+    #                   except:
+    #                     g_vals.append(np.nan)
+    #                 # Create two subplots side by side
+    #                 ax1 = self.plot_figure.add_subplot(121)  # Left plot
+    #                 ax2 = self.plot_figure.add_subplot(122)  # Right plot
+                    
+    #                 # LEFT PLOT: g(x) and y=x
+    #                 ax1.set_facecolor('#1f1f1f')
+    #                 ax1.plot(x_vals, g_vals, 'cyan', linewidth=2, label='g(x)')
+    #                 ax1.plot(x_vals, x_vals, 'yellow', linewidth=2, linestyle='--', label='y = x', alpha=0.7)
+    #                 ax1.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+    #                 ax1.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+    #                 ax1.grid(True, alpha=0.3, color='gray')
+    #                 ax1.set_xlabel('x', color='white', fontsize=11)
+    #                 ax1.set_ylabel('y', color='white', fontsize=11)
+    #                 ax1.set_title('Fixed Point: x = g(x)', color='white', fontsize=12)
+    #                 ax1.tick_params(colors='white', labelsize=9)
+    #                 for spine in ax1.spines.values():
+    #                     spine.set_color('white')
+    #                 ax1.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                    
+    #                 # RIGHT PLOT: Original function f(x)
+    #                 ax2.set_facecolor('#1f1f1f')
+    #                 ax2.plot(x_vals, y_vals, 'lime', linewidth=2, label='f(x)')
+    #                 ax2.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #                 ax2.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+    #                 ax2.grid(True, alpha=0.3, color='gray')
+    #                 ax2.set_xlabel('x', color='white', fontsize=11)
+    #                 ax2.set_ylabel('f(x)', color='white', fontsize=11)
+    #                 ax2.set_title(f'Original: f(x) = {equation}', color='white', fontsize=12)
+    #                 ax2.tick_params(colors='white', labelsize=9)
+    #                 for spine in ax2.spines.values():
+    #                     spine.set_color('white')
+    #                 ax2.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white', fontsize=9)
+                    
+    #             except Exception as e:
+    #                 # If g(x) parsing fails, show error and just plot f(x)
+    #                 ax = self.plot_figure.add_subplot(111)
+    #                 ax.set_facecolor('#1f1f1f')
+    #                 ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+    #                 ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #                 ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #                 ax.set_title(f'f(x) = {equation} (g(x) error)', color='white', fontsize=14)
+    #                 ax.set_xlabel('x', color='white', fontsize=12)
+    #                 ax.set_ylabel('f(x)', color='white', fontsize=12)
+    #                 ax.grid(True, alpha=0.3, color='gray')
+    #                 ax.tick_params(colors='white')
+    #                 for spine in ax.spines.values():
+    #                     spine.set_color('white')
+            
+    #         # ALL OTHER METHODS - SINGLE PLOT
+    #         else:
+    #             ax = self.plot_figure.add_subplot(111)
+    #             ax.set_facecolor('#1f1f1f')
+                
+    #             # Plot f(x)
+    #             ax.plot(x_vals, y_vals, 'cyan', linewidth=2, label='f(x)')
+    #             ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+    #             ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
+                
+    #             # Highlight interval for interval-based methods
+    #             if method in ["Bisection", "False-Position"]:
+    #                 ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
+    #                 ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
+                
+    #             # Styling
+    #             ax.grid(True, alpha=0.3, color='gray')
+    #             ax.set_xlabel('x', color='white', fontsize=12)
+    #             ax.set_ylabel('f(x)', color='white', fontsize=12)
+    #             ax.set_title(f'f(x) = {equation}', color='white', fontsize=14)
+    #             ax.tick_params(colors='white')
+    #             for spine in ax.spines.values():
+    #                 spine.set_color('white')
+    #             ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+            
+    #         self.plot_figure.tight_layout()
+    #         self.plot_canvas.draw()
+            
+    #     except Exception as e:
+    #         self.display_error(f"Error plotting function: {str(e)}")
+    #         # Highlight interval for interval-based methods
+    #     #     if method in ["Bisection", "False-Position"]:
+    #     #         ax.axvline(x=xl, color='yellow', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xl = {xl}')
+    #     #         ax.axvline(x=xu, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Xu = {xu}')
+            
+    #     #     # Styling
+    #     #     ax.grid(True, alpha=0.3, color='gray')
+    #     #     ax.set_xlabel('x', color='white', fontsize=12)
+    #     #     ax.tick_params(colors='white')
+    #     #     ax.spines['bottom'].set_color('white')
+    #     #     ax.spines['top'].set_color('white')
+    #     #     ax.spines['left'].set_color('white')
+    #     #     ax.spines['right'].set_color('white')
+    #     #     ax.legend(facecolor='#2b2b2b', edgecolor='white', labelcolor='white')
+            
+    #     #     self.plot_figure.tight_layout()
+    #     #     self.plot_canvas.draw()
+            
+    #     # except Exception as e:
+    #     #     self.display_error(f"Error plotting function: {str(e)}")
     
     def display_result(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
