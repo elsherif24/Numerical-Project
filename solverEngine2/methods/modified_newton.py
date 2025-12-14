@@ -69,6 +69,7 @@ class ModifiedNewtonMethod(BaseRootFindingMethod):
                 if i > 0:
                     if not x_next.isNearZero():
                         ea = abs((x_next - x_prev) / x_next)
+                        significant_digits = self.calculate_significant_digits(ea)
                     else:
                         ea = float('inf')
                 
@@ -95,7 +96,8 @@ class ModifiedNewtonMethod(BaseRootFindingMethod):
                             'type': 'converged',
                             'message': 'f(xr) is near zero. Root found.',
                             'xr': x_next,
-                            'f_xr': f_xnext
+                            'f_xr': f_xnext,
+                            'significant_digits': significant_digits
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -117,6 +119,7 @@ class ModifiedNewtonMethod(BaseRootFindingMethod):
             self.result.approximate_error = ea if ea != float('inf') else 0.0
             self.result.converged = False
             self.result.f_root = f_xnext
+            self.result.significant_digits = significant_digits if significant_digits else None
             self.result.steps = steps
             self.result.error_message = "Maximum iterations reached without convergence"
             
