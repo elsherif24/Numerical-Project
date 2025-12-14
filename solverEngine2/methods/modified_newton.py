@@ -49,18 +49,28 @@ class ModifiedNewtonMethod(BaseRootFindingMethod):
             ea = float('inf')
             
             for i in range(params.max_iterations):
-                f_x_prev = self.func_guard(x_prev, f)
-                df_x_prev = self.func_guard(x_prev, df)
+                try:
+                    f_x_prev = self.func_guard(x_prev, f)
+                    df_x_prev = self.func_guard(x_prev, df)
+                except:
+                    raise ZeroDivisionError("Division by Zero When Evaluating f(x) or f'(x)")
                 
                 if not isinstance(f_x_prev, D): f_x_prev = D(f_x_prev)
                 if not isinstance(df_x_prev, D): df_x_prev = D(df_x_prev)
                 
-                mfxdx = m*(f_x_prev / df_x_prev)
+                try:
+                    mfxdx = m*(f_x_prev / df_x_prev)
+                except:
+                    raise ZeroDivisionError("Zero Division Error: f'(xi) is equal to zero.")
+                
                 x_next = D(x_prev - mfxdx)
                 f_xnext = self.func_guard(x_next, f)
                 
                 if i > 0:
-                    ea = abs((x_next - x_prev) / x_next)
+                    if not x_next.isNearZero():
+                        ea = abs((x_next - x_prev) / x_next)
+                    else:
+                        ea = float('inf')
                 
                 if params.step_by_step:
                     steps.append({

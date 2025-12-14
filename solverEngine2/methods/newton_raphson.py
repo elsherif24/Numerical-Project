@@ -39,7 +39,6 @@ class NewtonRaphsonMethod(BaseRootFindingMethod):
         return True
     
     def solve(self, params: RootFinderParameters) -> RootFinderResult:
-        """Execute Newton-Raphson method - TO BE IMPLEMENTED"""
         self.setup(params)
         
         steps = []
@@ -54,15 +53,25 @@ class NewtonRaphsonMethod(BaseRootFindingMethod):
             for i in range(params.max_iterations):
                 f_x_prev = self.func_guard(x_prev, f)
                 df_x_prev = self.func_guard(x_prev, df)
-                
+                        
                 if not isinstance(f_x_prev, D): f_x_prev = D(f_x_prev)
                 if not isinstance(df_x_prev, D): df_x_prev = D(df_x_prev)
                 
-                x_next = D(x_prev - f_x_prev / df_x_prev)
-                f_xnext = self.func_guard(x_next, f)
+                try:
+                    x_next = D(x_prev - f_x_prev / df_x_prev)
+                except:
+                    raise ZeroDivisionError("Division By Zero Error in Newton-Raphson Method. f'(xi) is Equal to Zero")
+                
+                try:
+                    f_xnext = self.func_guard(x_next, f)
+                except:
+                    raise ZeroDivisionError("Division by Zero Error Evaluating f(xi+1)")
                 
                 if i > 0:
-                    ea = abs((x_next - x_prev) / x_next)
+                    if not x_next.isNearZero():
+                        ea = abs((x_next - x_prev) / x_next)
+                    else:
+                        ea = float('inf')
                 
                 if params.step_by_step:
                     steps.append({
@@ -72,7 +81,7 @@ class NewtonRaphsonMethod(BaseRootFindingMethod):
                         'f(xi)': f_x_prev,
                         'df(xi)': df_x_prev,
                         'xi+1': x_next,
-                        'error': ea if i > 0 else 'N/A'
+                        'error': ea if i > 0 and ea != float('inf') else 'N/A'
                     })
                     
                 if f_xnext.isNearZero():

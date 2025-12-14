@@ -50,20 +50,31 @@ class SecantMethod(BaseRootFindingMethod):
             ea = float('inf')
             
             for i in range(params.max_iterations):
-                f_x0 = self.func_guard(x0, f)
-                f_x1 = self.func_guard(x1, f)
+                try:
+                    f_x0 = self.func_guard(x0, f)
+                    f_x1 = self.func_guard(x1, f)
+                except:
+                    raise ZeroDivisionError("Division by Zero When Evaluating f(x0) or f(x1)")
                 
                 
-                factor = D((f_x1 * (x0 - x1)) / (f_x0 - f_x1))
-                x_next = D(x1 - factor)
-                f_xnext = self.func_guard(x_next, f)
-                
-                
-                if abs(f_x0 - f_x1) < 1e-15:
+                try:                
+                    factor = D((f_x1 * (x0 - x1)) / (f_x0 - f_x1))
+                except:
                     raise ZeroDivisionError("Secant denominator near zero")
+                x_next = D(x1 - factor)
+                
+                try:
+                    f_xnext = self.func_guard(x_next, f)
+                except:
+                    raise ZeroDivisionError("Zero Division Error Evaluating f(xi+1).")
+                
                 
                 if i > 0:
-                    ea = abs((x_next - x1) / x_next)
+                    if not x_next.isNearZero():
+                        ea = abs((x_next - x1) / x_next)
+                    else:
+                        ea = float('inf')
+                    
                 
                 if params.step_by_step:
                     steps.append({

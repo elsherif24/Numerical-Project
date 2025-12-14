@@ -240,18 +240,18 @@
 #         ).pack(fill="x")
     
 #     def create_plot_section(self, parent):
-#         plot_container = ctk.CTkFrame(parent, fg_color="transparent")
-#         plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+#         self.plot_container = ctk.CTkFrame(parent, fg_color="transparent")
+#         self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
         
 #         ctk.CTkLabel(
-#             plot_container,
+#             self.plot_container,
 #             text="Function Plot",
 #             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
 #         ).pack(anchor="w", pady=(0, 10))
         
 #         # Create matplotlib figure
 #         self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
-#         self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+#         self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
 #         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         
 #         # Initial empty plot
@@ -271,17 +271,17 @@
 #         self.plot_canvas.draw()
     
 #     def create_output_section(self, parent):
-#         output_container = ctk.CTkFrame(parent, fg_color="transparent")
-#         output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
+#         self.output_container = ctk.CTkFrame(parent, fg_color="transparent")
+#         self.output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
         
 #         ctk.CTkLabel(
-#             output_container,
+#             self.output_container,
 #             text="Results",
 #             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
 #         ).pack(anchor="w", pady=(0, 10))
         
 #         self.output_text = ctk.CTkTextbox(
-#             output_container,
+#             self.output_container,
 #             font=ctk.CTkFont(family="Courier New", size=13),
 #             corner_radius=8
 #         )
@@ -421,7 +421,27 @@ class Phase2View:
         self.newton_frame = None        # For Newton-Raphson, Modified Newton
         self.secant_frame = None        # For Secant
         self.modified_newton_frame = None  # For Modified Newton only
+        self.current_view = 'output'
+        self.plot_container = None
+        self.output_container = None
+        self.toggle_button = None
 
+    def toggle_view(self):
+        if self.current_view == "plot":
+            self.plot_container.pack_forget()
+            self.output_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+
+            self.current_view = "output"
+            self.toggle_button.configure(text="Plot")
+
+        else:
+            self.output_container.pack_forget()
+            self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+
+            self.current_view = "plot"
+            self.toggle_button.configure(text="Output")
+            
+    
     def build_ui(self):
         # Main container
         main_container = ctk.CTkFrame(self.root, fg_color="#1a1a1a")
@@ -445,10 +465,24 @@ class Phase2View:
         )
         right_col.pack(side="left", fill="both", expand=True, padx=(5, 0))
         
+        self.toggle_button = ctk.CTkButton(
+            right_col, 
+            text="Plot",
+            font=ctk.CTkFont(family="Courier New", size=14),
+            width=80,
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=2,
+            command=self.toggle_view
+            )
+        self.toggle_button.pack(anchor='nw', pady=15, padx=10)
+        
         # Build sections
         self.create_input_section(left_col)
         self.create_plot_section(right_col)
         self.create_output_section(right_col)
+        self.toggle_view()
     
     def create_input_section(self, parent):
         # Title
@@ -838,21 +872,21 @@ class Phase2View:
             self.secant_frame.pack(fill="x", pady=(0, 10), before=self.secant_frame.master.winfo_children()[-6])
     
     def create_plot_section(self, parent):
-        plot_container = ctk.CTkFrame(parent, fg_color="transparent")
-        plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+        self.plot_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
         
         ctk.CTkLabel(
-            plot_container,
+            self.plot_container,
             text="Function Plot",
             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
         ).pack(anchor="w", pady=(0, 10))
         
         # Create matplotlib figure
         # self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
-        # self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+        # self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
         # self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         self.plot_figure = Figure(figsize=(10, 4), dpi=100, facecolor='#2b2b2b')
-        self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+        self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         
         # Initial empty plot
@@ -872,17 +906,17 @@ class Phase2View:
         self.plot_canvas.draw()
     
     def create_output_section(self, parent):
-        output_container = ctk.CTkFrame(parent, fg_color="transparent")
-        output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
+        self.output_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
         
         ctk.CTkLabel(
-            output_container,
+            self.output_container,
             text="Results",
             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
         ).pack(anchor="w", pady=(0, 10))
         
         self.output_text = ctk.CTkTextbox(
-            output_container,
+            self.output_container,
             font=ctk.CTkFont(family="Courier New", size=13),
             corner_radius=8
         )
@@ -1364,54 +1398,68 @@ class Phase2View:
     def display_result_modified_newton(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
 
-        self.output_text.insert("end", "="*70 + "\n")
+        sep = "=" * 80
+        sub_sep = "-" * 80
+
+        self.output_text.insert("end", f"{sep}\n")
         self.output_text.insert("end", "MODIFIED NEWTON–RAPHSON METHOD RESULTS\n")
-        self.output_text.insert("end", "="*70 + "\n\n")
+        self.output_text.insert("end", f"{sep}\n\n")
 
         if result.error_message:
-            self.output_text.insert("end", f"⚠ Warning: {result.error_message}\n\n")
+            self.output_text.insert("end", f"⚠  Warning: {result.error_message}\n\n")
 
         if result.root is not None:
             sig_figs = get_sig_figs()
 
-            self.output_text.insert("end", f"Approximate Root: {result.root}\n")
-            self.output_text.insert("end", f"Function value at root f(xr): {result.f_root}\n")
-            self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
-            self.output_text.insert("end", f"Approximate Relative Error: {result.approximate_error}\n")
-            self.output_text.insert("end", f"Execution Time: {result.execution_time:.6}\n")
-            self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
-            self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
+            self.output_text.insert("end", f"Approximate Root (xr)        : {result.root}\n")
+            self.output_text.insert("end", f"f(xr)                       : {result.f_root}\n")
+            self.output_text.insert("end", f"Iterations                  : {result.iterations}\n")
+            self.output_text.insert("end", f"Approx. Relative Error      : {result.approximate_error}\n")
+            self.output_text.insert("end", f"Execution Time              : {result.execution_time:.6}\n")
+            self.output_text.insert("end", f"Significant Figures         : {sig_figs}\n")
+            self.output_text.insert(
+                "end",
+                f"Status                      : "
+                f"{'✓ Converged' if result.converged else '✗ Did not converge'}\n"
+            )
 
             if result.steps:
-                self.output_text.insert("end", "\n" + "="*70 + "\n")
-                self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n")
-                self.output_text.insert("end", "="*70 + "\n\n")
+                self.output_text.insert("end", f"\n{sep}\n")
+                self.output_text.insert("end", "STEP-BY-STEP ITERATIONS\n")
+                self.output_text.insert("end", f"{sep}\n\n")
 
-                # Table header
-                self.output_text.insert(
-                    "end",
-                    f"{'Iter':<6} {'Xi':<15} {'f(Xi)':<15} {'df(Xi)':<15} {'mf(Xi)/df(Xi)':<15} {'Xi+1':<15} {'Error':<15}\n"
-                )
-                self.output_text.insert("end", "-"*100 + "\n")
+                headers = ["Iter", "Xi", "fx", "dfx", "mf/df", "Xi+1", "Error"]
+                col_widths = [6, 14, 14, 14, 14, 14, 14]
+
+                header_row = "".join(f"{h:<{w}}" for h, w in zip(headers, col_widths))
+                self.output_text.insert("end", header_row + "\n")
+                self.output_text.insert("end", sub_sep + "\n")
 
                 for step in result.steps:
                     if step["type"] == "iteration":
-                        self.output_text.insert(
-                            "end",
-                            f"{step['iteration']:<6} "
-                            f"{step['xi']:<15} "
-                            f"{step['f(xi)']:<15} "
-                            f"{step['df(xi)']:<15} "
-                            f"{step['mf(xi)/df(xi)']:<15} "
-                            f"{step['xi+1']:<15} "
-                            f"{step['error']:<15}\n"
+                        row = "".join(
+                            f"{step[k]:<{w}}"
+                            for k, w in zip(
+                                [
+                                    "iteration",
+                                    "xi",
+                                    "f(xi)",
+                                    "df(xi)",
+                                    "mf(xi)/df(xi)",
+                                    "xi+1",
+                                    "error",
+                                ],
+                                col_widths,
+                            )
                         )
+                        self.output_text.insert("end", row + "\n")
+
                     elif step["type"] == "converged":
-                        self.output_text.insert("end", f"\n{step['message']}\n")
-                        if 'xr' in step:
-                            self.output_text.insert("end", f"Final xr: {step['xr']}\n")
-                        if 'f_xr' in step:
-                            self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
+                        self.output_text.insert("end", f"\n✓ {step['message']}\n")
+                        if "xr" in step:
+                            self.output_text.insert("end", f"Final xr : {step['xr']}\n")
+                        if "f_xr" in step:
+                            self.output_text.insert("end", f"f(xr)    : {step['f_xr']}\n")
 
     def display_result_secant(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
