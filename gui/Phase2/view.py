@@ -1338,7 +1338,7 @@ class Phase2View:
                 # Table header
                 self.output_text.insert(
                     "end",
-                    f"{'Iter':<6} {'Xi':<15} {'f(Xi)':<15} {'df(Xi)':<15} {'mf(Xi)/df(Xi)':<15} {'Xi+1':<15} {'Error':<15}\n"
+                    f"{'Iter':<6} {'Xi':<15} {'f(Xi)':<15} {'df(Xi)':<15} {'mf/df':<12} {'Xi+1':<15} {'Error':<15}\n"
                 )
                 self.output_text.insert("end", "-"*100 + "\n")
 
@@ -1350,7 +1350,7 @@ class Phase2View:
                             f"{step['xi']:<15} "
                             f"{step['f(xi)']:<15} "
                             f"{step['df(xi)']:<15} "
-                            f"{step['mf(xi)/df(xi)']:<15} "
+                            f"{step['mf(xi)/df(xi)']:<12} "
                             f"{step['xi+1']:<15} "
                             f"{step['error']:<15}\n"
                         )
