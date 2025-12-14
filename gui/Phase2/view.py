@@ -240,18 +240,18 @@
 #         ).pack(fill="x")
     
 #     def create_plot_section(self, parent):
-#         plot_container = ctk.CTkFrame(parent, fg_color="transparent")
-#         plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+#         self.plot_container = ctk.CTkFrame(parent, fg_color="transparent")
+#         self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
         
 #         ctk.CTkLabel(
-#             plot_container,
+#             self.plot_container,
 #             text="Function Plot",
 #             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
 #         ).pack(anchor="w", pady=(0, 10))
         
 #         # Create matplotlib figure
 #         self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
-#         self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+#         self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
 #         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         
 #         # Initial empty plot
@@ -271,17 +271,17 @@
 #         self.plot_canvas.draw()
     
 #     def create_output_section(self, parent):
-#         output_container = ctk.CTkFrame(parent, fg_color="transparent")
-#         output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
+#         self.output_container = ctk.CTkFrame(parent, fg_color="transparent")
+#         self.output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
         
 #         ctk.CTkLabel(
-#             output_container,
+#             self.output_container,
 #             text="Results",
 #             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
 #         ).pack(anchor="w", pady=(0, 10))
         
 #         self.output_text = ctk.CTkTextbox(
-#             output_container,
+#             self.output_container,
 #             font=ctk.CTkFont(family="Courier New", size=13),
 #             corner_radius=8
 #         )
@@ -421,7 +421,27 @@ class Phase2View:
         self.newton_frame = None        # For Newton-Raphson, Modified Newton
         self.secant_frame = None        # For Secant
         self.modified_newton_frame = None  # For Modified Newton only
+        self.current_view = 'output'
+        self.plot_container = None
+        self.output_container = None
+        self.toggle_button = None
 
+    def toggle_view(self):
+        if self.current_view == "plot":
+            self.plot_container.pack_forget()
+            self.output_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+
+            self.current_view = "output"
+            self.toggle_button.configure(text="Plot")
+
+        else:
+            self.output_container.pack_forget()
+            self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+
+            self.current_view = "plot"
+            self.toggle_button.configure(text="Output")
+            
+    
     def build_ui(self):
         # Main container
         main_container = ctk.CTkFrame(self.root, fg_color="#1a1a1a")
@@ -445,10 +465,24 @@ class Phase2View:
         )
         right_col.pack(side="left", fill="both", expand=True, padx=(5, 0))
         
+        self.toggle_button = ctk.CTkButton(
+            right_col, 
+            text="Plot",
+            font=ctk.CTkFont(family="Courier New", size=14),
+            width=80,
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=2,
+            command=self.toggle_view
+            )
+        self.toggle_button.pack(anchor='nw', pady=15, padx=10)
+        
         # Build sections
         self.create_input_section(left_col)
         self.create_plot_section(right_col)
         self.create_output_section(right_col)
+        self.toggle_view()
     
     def create_input_section(self, parent):
         # Title
@@ -838,21 +872,21 @@ class Phase2View:
             self.secant_frame.pack(fill="x", pady=(0, 10), before=self.secant_frame.master.winfo_children()[-6])
     
     def create_plot_section(self, parent):
-        plot_container = ctk.CTkFrame(parent, fg_color="transparent")
-        plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
+        self.plot_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.plot_container.pack(fill="both", expand=True, padx=15, pady=(15, 5))
         
         ctk.CTkLabel(
-            plot_container,
+            self.plot_container,
             text="Function Plot",
             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
         ).pack(anchor="w", pady=(0, 10))
         
         # Create matplotlib figure
         # self.plot_figure = Figure(figsize=(8, 4), dpi=100, facecolor='#2b2b2b')
-        # self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+        # self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
         # self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         self.plot_figure = Figure(figsize=(10, 4), dpi=100, facecolor='#2b2b2b')
-        self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, plot_container)
+        self.plot_canvas = FigureCanvasTkAgg(self.plot_figure, self.plot_container)
         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
         
         # Initial empty plot
@@ -872,17 +906,17 @@ class Phase2View:
         self.plot_canvas.draw()
     
     def create_output_section(self, parent):
-        output_container = ctk.CTkFrame(parent, fg_color="transparent")
-        output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
+        self.output_container = ctk.CTkFrame(parent, fg_color="transparent")
+        self.output_container.pack(fill="both", expand=True, padx=15, pady=(5, 15))
         
         ctk.CTkLabel(
-            output_container,
+            self.output_container,
             text="Results",
             font=ctk.CTkFont(family="Courier New", size=16, weight="bold")
         ).pack(anchor="w", pady=(0, 10))
         
         self.output_text = ctk.CTkTextbox(
-            output_container,
+            self.output_container,
             font=ctk.CTkFont(family="Courier New", size=13),
             corner_radius=8
         )
