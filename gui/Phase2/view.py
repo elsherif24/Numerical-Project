@@ -1073,6 +1073,10 @@ class Phase2View:
             self.output_text.insert("end", f"Function value at root f(xr): {f_root_d}\n")
             self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
             self.output_text.insert("end", f"Approximate Relative Error: {approximate_error}\n")
+            if result.significant_digits is not None:
+              self.output_text.insert("end", f"Significant Digits (at least correct): {result.significant_digits}\n")
+            else:
+              self.output_text.insert("end", f"Significant Digits (at least correct): Perfect accuracy (error = 0)\n")
             self.output_text.insert("end", f"Execution Time: {result.execution_time:.6f} seconds\n")
             self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
             self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
@@ -1195,7 +1199,29 @@ class Phase2View:
                 self.output_text.insert("end", f"Final xr: {step['xr']}\n")
             if 'f_xr' in step:
                 self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
-
+            if 'significant_digits' in step:
+                # self.output_text.insert("end", f"Significant digits: {step['significant_digits']}\n")
+                sig_dig_val = step['significant_digits']
+                if sig_dig_val is None:
+                    self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
+                else:
+                    self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
+        elif step['type'] == 'warning':
+            self.output_text.insert("end", f"\n⚠ {step['message']}\n")
+            if 'final_xr' in step:
+                self.output_text.insert("end", f"Final xr: {step['final_xr']}\n")
+            if 'final_x' in step:
+                self.output_text.insert("end", f"Final x: {step['final_x']}\n")
+            if 'final_f_x' in step:
+                self.output_text.insert("end", f"f(x): {step['final_f_x']}\n")
+            if 'final_error' in step:
+                self.output_text.insert("end", f"Final error: {step['final_error']}\n")
+            if 'significant_digits' in step:
+                sig_dig_val = step['significant_digits']
+                if sig_dig_val is None:
+                    self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
+                else:
+                    self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
     def display_fixed_point_steps(self, steps: list, sig_figs: int):
       col_width = sig_figs + 7
     
@@ -1208,9 +1234,6 @@ class Phase2View:
             self.output_text.insert("end", f"ε = {step['epsilon']}\n")
             if 'convergence_prediction' in step:
                 self.output_text.insert("end", f"Prediction: {step['convergence_prediction']}\n\n")
-            
-            
-            
             break
     
     # Print table header for Fixed Point
@@ -1242,7 +1265,36 @@ class Phase2View:
                 self.output_text.insert("end", f"Final xr: {step['xr']}\n")
             if 'f_xr' in step:
                 self.output_text.insert("end", f"f(xr): {step['f_xr']}\n") 
-
+            if 'significant_digits' in step:
+                sig_dig_val = step['significant_digits']
+                if sig_dig_val is None:
+                    self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
+                else:
+                    self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
+        elif step['type'] == 'warning':
+            self.output_text.insert("end", f"\n⚠ {step['message']}\n")
+            if 'final_x' in step:
+                self.output_text.insert("end", f"Final x: {step['final_x']}\n")
+            if 'final_f_x' in step:
+                self.output_text.insert("end", f"f(x): {step['final_f_x']}\n")
+            if 'final_error' in step:
+                self.output_text.insert("end", f"Final error: {step['final_error']}\n")
+            if 'significant_digits' in step:
+                sig_dig_val = step['significant_digits']
+                if sig_dig_val is None:
+                    self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
+                else:
+                    self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
+        elif step['type'] == 'error':
+            self.output_text.insert("end", f"\n❌ ERROR: {step['message']}\n")
+            if 'last_valid_x' in step:
+                self.output_text.insert("end", f"Last valid x: {step['last_valid_x']}\n")
+            if 'significant_digits' in step:
+                sig_dig_val = step['significant_digits']
+                if sig_dig_val is None:
+                    self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
+                else:
+                    self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
     def display_result_newton(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
 

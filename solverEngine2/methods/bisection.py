@@ -70,15 +70,24 @@ class BisectionMethod(BaseRootFindingMethod):
             # Main iteration loop
             for i in range(1, k_required+ 1):
                 if(i>params.max_iterations):
-                    print(k_required)
-                    print(ea)
                     self.result.root = float(xr)
                     self.result.f_root=float(f_xr)
                     self.result.iterations = params.max_iterations
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+
                     self.result.approximate_error = ea if ea != float('inf') else 0.0
                     self.result.converged = False
+                    if params.step_by_step:
+                       steps.append({
+                'type': 'warning',
+                'message': f'Maximum iterations ({params.max_iterations}) reached, but {k_required} required',
+                'final_xr': str(xr) if xr is not None else 'N/A',
+                'final_error': str(D(ea * 100)) if ea != float('inf') else 'N/A',
+                'significant_digits': significant_digits
+                   })
                     self.result.steps = steps
-                    self.result.error_message = f"Maximum iterations reached without convergence ,Required {k_required} iterations ."
+                    self.result.error_message = f"Maximum iterations reached without convergence, Required {k_required} iterations."
+
                     return self.finalize()
             
                     
@@ -94,7 +103,8 @@ class BisectionMethod(BaseRootFindingMethod):
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
                         ea = float(abs((xr - xr_prev) )/xr )
-                        
+                        significant_digits = self.calculate_significant_digits(ea)  # Inherited method
+
                     else:
                         ea = 0.0
                 
@@ -112,22 +122,25 @@ class BisectionMethod(BaseRootFindingMethod):
                     })
                 
                 # Check if function value is near zero (root found)
-                # if f_xr.isNearZero():
-                #     self.result.root = float(xr)
-                #     self.result.f_root=float(f_xr)
+                if f_xr == 0 :
+                    self.result.root = float(xr)
+                    self.result.f_root=float(f_xr)
+                    
+                    self.result.iterations = i
+                    self.result.approximate_error = ea if ea != float('inf') else 0.0
+                    self.result.converged = True
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
 
-                #     self.result.iterations = i
-                #     self.result.approximate_error = ea if ea != float('inf') else 0.0
-                #     self.result.converged = True
-                #     if params.step_by_step:
-                #         steps.append({
-                #             'type': 'converged',
-                #             'message': 'f(xr) is near zero. Root found.',
-                #             'xr': str(xr),
-                #             'f_xr': str(f_xr)
-                #         })
-                #     self.result.steps = steps
-                #     return self.finalize()
+                    if params.step_by_step:
+                        steps.append({
+                            'type': 'converged',
+                            'message': 'f(xr) is near zero. Root found.',
+                            'xr': str(xr),
+                            'f_xr': str(f_xr),
+                            'significant_digits': significant_digits if xr_prev is not None else None
+                        })
+                    self.result.steps = steps
+                    return self.finalize()
                 
                 # Check convergence based on error
                 # if ea != float('inf') and ea < float(params.epsilon):
@@ -163,6 +176,7 @@ class BisectionMethod(BaseRootFindingMethod):
                 xr_prev = xr
             self.result.root = float(xr)
             self.result.f_root=float(f_xr)
+            self.result.significant_digits = significant_digits if xr_prev is not None else None
 
             self.result.iterations = k_required
             self.result.approximate_error = ea if ea != float('inf') else 0.0
@@ -175,7 +189,9 @@ class BisectionMethod(BaseRootFindingMethod):
 
                             'xr': str(xr),
                             'f_xr': str(f_xr),
-                            'iterations':k_required
+                            'iterations':k_required,
+                            'significant_digits': significant_digits if xr_prev is not None else None
+
                         })
             self.result.steps = steps
         except Exception as e:

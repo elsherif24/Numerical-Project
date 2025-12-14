@@ -14,7 +14,8 @@ class RootFinderResult:
     converged: bool = False
     error_message: Optional[str] = None
     steps: List = None
-    
+    significant_digits: Optional[int] = None  # Add this
+
     def __post_init__(self):
         if self.steps is None:
             self.steps = []

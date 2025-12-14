@@ -129,6 +129,8 @@ class FixedPointMethod(BaseRootFindingMethod):
                        self.result.root = float(xr_prev) if xr_prev is not None else float(x0)
                        self.result.iterations = i - 1
                        self.result.converged = False
+                       self.result.significant_digits = significant_digits if xr_prev is not None else None
+
                        if params.step_by_step:
                             steps.append({
                     'type': 'error',
@@ -145,8 +147,16 @@ class FixedPointMethod(BaseRootFindingMethod):
                          break
                 
                 # Calculate absolute error (not relative)
+                # if xr_prev is not None:
+                #     ea = float(abs(xr - xr_prev)/xr)
                 if xr_prev is not None:
-                    ea = float(abs(xr - xr_prev))
+                    if xr != D(0):
+                        # ea = float(abs((xr - xr_prev) / xr) * D(100))
+                        ea = float(abs((xr - xr_prev) )/xr )
+                        significant_digits = self.calculate_significant_digits(ea)  # Inherited method
+
+                    else:
+                        ea = 0.0
                 try:
                 # Evaluate f(x) at current approximation
                     f_xr = self.func(xr)
@@ -169,12 +179,14 @@ class FixedPointMethod(BaseRootFindingMethod):
                         'method': 'Fixed Point'
                     })
                 
-                if f_xr.isNearZero():
+                if f_xr == 0:
                     self.result.root = float(xr)
                     self.result.f_root = float(f_xr)
                     self.result.iterations = i
                     self.result.approximate_error = ea if ea != float('inf') else 0.0
                     self.result.converged = True
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+
                     
                     if params.step_by_step:
                         steps.append({
@@ -182,7 +194,9 @@ class FixedPointMethod(BaseRootFindingMethod):
                             'message': f'f(x) is near zero. Root found.',
                             'xr': str(xr),
                             'f_xr': str(f_xr),
-                            'iterations': i
+                            'iterations': i,
+                            'significant_digits': significant_digits if xr_prev is not None else None
+
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -194,13 +208,18 @@ class FixedPointMethod(BaseRootFindingMethod):
                     self.result.approximate_error = ea
                     self.result.converged = True
                     
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+
+                    
                     if params.step_by_step:
                         steps.append({
                             'type': 'converged',
                             'message': f'Absolute error ({ea:.6f}) below epsilon ({float(params.epsilon):.6f})',
                             'xr': str(xr),
                             'f_xr': str(f_xr),
-                            'iterations': i
+                            'iterations': i,
+                            'significant_digits': significant_digits if xr_prev is not None else None
+
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -218,6 +237,8 @@ class FixedPointMethod(BaseRootFindingMethod):
             self.result.f_root = float(f_xr)
             self.result.iterations = iteration_count
             self.result.approximate_error = ea if ea != float('inf') else 0.0
+            self.result.significant_digits = significant_digits if xr_prev is not None else None
+
             self.result.converged = False
             self.result.steps = steps
             
@@ -230,7 +251,9 @@ class FixedPointMethod(BaseRootFindingMethod):
                     'message': f'Maximum iterations ({params.max_iterations}) reached without convergence',
                     'final_x': str(xr),
                     'final_f_x': str(f_xr),
-                    'final_error': ea if ea != float('inf') else 'N/A'
+                    'final_error': ea if ea != float('inf') else 'N/A',
+                    'significant_digits': significant_digits 
+
                 })
             
         except ZeroDivisionError:

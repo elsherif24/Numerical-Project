@@ -87,6 +87,8 @@ class FalsePositionMethod(BaseRootFindingMethod):
                     if xr != D(0):
                         # ea = float(abs((xr - xr_prev) / xr) * D(100))
                         ea = float(abs(xr - xr_prev ) / xr)
+                        significant_digits = self.calculate_significant_digits(ea)  # Inherited method
+
                     else:
                         ea = 0.0
                 
@@ -105,20 +107,25 @@ class FalsePositionMethod(BaseRootFindingMethod):
                     })
                 
                 # Check if function value is near zero (root found)
-                if f_xr.isNearZero():
+                if f_xr == 0:
                     self.result.root = float(xr)
                     self.result.f_root=float(f_xr)
 
                     self.result.iterations = i
                     self.result.approximate_error = ea if ea != float('inf') else 0.0
                     self.result.converged = True
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+
                     if params.step_by_step:
                         steps.append({
                             'type': 'converged',
                             'message': 'f(xr) is near zero. Root found.',
                             'xr': str(xr),
                             'f_xr': str(f_xr),
-                            'iterations': i
+                            'iterations': i,
+                            'significant_digits': significant_digits if xr_prev is not None else None
+
+                            
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -130,13 +137,17 @@ class FalsePositionMethod(BaseRootFindingMethod):
                     self.result.iterations = i
                     self.result.approximate_error = ea
                     self.result.converged = True
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+
                     if params.step_by_step:
                         steps.append({
                             'type': 'converged',
                             'message': f'Approximate error ({ea:.6f}%) below tolerance ({float(params.epsilon):.6f}%)',
                             'xr': str(xr),
                             'f_xr': str(f_xr),
-                            'iterations': i
+                            'iterations': i,
+                            'significant_digits': significant_digits if xr_prev is not None else None
+
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -158,18 +169,22 @@ class FalsePositionMethod(BaseRootFindingMethod):
             self.result.f_root=float(f_xr)
             self.result.iterations = params.max_iterations
             self.result.approximate_error = ea if ea != float('inf') else 0.0
+            self.result.significant_digits = significant_digits if xr_prev is not None else None
+
             self.result.converged = False
-            self.result.steps = steps
-            self.result.error_message = "Maximum iterations reached without convergence"
+           
             
             if params.step_by_step:
                 steps.append({
                     'type': 'warning',
                     'message': f'Maximum iterations ({params.max_iterations}) reached',
                     'final_xr': str(xr),
-                    'final_error': ea if ea != float('inf') else 'N/A'
+                    'final_error': ea if ea != float('inf') else 'N/A',
+                            'significant_digits': significant_digits  
+
                 })
-            
+            self.result.steps = steps
+            self.result.error_message = "Maximum iterations reached without convergence"
         except ZeroDivisionError:
             self.result.error_message = "Division by zero occurred in false position calculation"
         except Exception as e:

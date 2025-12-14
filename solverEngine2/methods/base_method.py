@@ -1,5 +1,6 @@
 
 from abc import ABC, abstractmethod
+import math
 import time
 from solverEngine2.base.data_classes import RootFinderParameters, RootFinderResult
 from solverEngine2.base.equation_parser import parse_equation
@@ -46,3 +47,25 @@ class BaseRootFindingMethod(ABC):
     @abstractmethod
     def validate_parameters(self) -> bool:
         pass
+    def calculate_significant_digits(self, ea):
+        """
+        Calculate number of significant digits at least correct.
+        ea: approximate relative error (as decimal, not percentage)
+        Returns: number of significant digits (m)
+        
+        Formula: m ≤ 2 - log₁₀(0.5 × εₐ)
+        This gives the number of significant digits guaranteed to be correct.
+        """
+        if ea == 0:
+            return  None  # Perfect accuracy
+        
+        if ea == float('inf') or ea < 0:
+            return None
+        
+        try:
+            # Formula: m ≤ 2 - log₁₀(0.5 × εₐ)
+            ea_percent = ea * 100
+            m = 2 - math.log10( ea_percent/0.5)
+            return math.floor(m)  # Round down to get "at least" correct digits
+        except (ValueError, OverflowError):
+            return 0
