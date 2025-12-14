@@ -3,9 +3,29 @@ import math
 from solverEngine2.methods.base_method import BaseRootFindingMethod
 from solverEngine2.base.data_classes import RootFinderParameters, RootFinderResult
 from D import D
+import sympy as sp
 
 
 class BisectionMethod(BaseRootFindingMethod):
+    
+    def make_function(self, equation_str):
+        """Parse equation using SymPy like in ModifiedNewtonMethod"""
+        equation_str = equation_str.replace("^", "**")
+        x = sp.symbols("x")
+        expr = sp.sympify(equation_str)
+        f = sp.lambdify(x, expr, "math")
+        return f
+    
+    def func_guard(self, x, f):
+        """Safe function evaluation with D class support"""
+        if not isinstance(x, D): 
+            x = D(x)
+        try:
+            result = f(float(x))  # SymPy lambdify expects float
+            return D(result) if not isinstance(result, D) else result
+        except Exception as e:
+            raise ValueError(f"Error evaluating equation: {str(e)}")
+
     def validate_parameters(self) -> bool:
         if self.params.xl >= self.params.xu:
             self.result.error_message = "Lower bound (xl) must be less than upper bound (xu)"
@@ -26,18 +46,22 @@ class BisectionMethod(BaseRootFindingMethod):
         steps = []
         
         try:
+            f = self.make_function(params.equation)
+
             # Convert to D objects for significant figure handling
             xl = D(params.xl)
             xu = D(params.xu)
             epsilon = D(params.epsilon)
             
             # Check if root exists in interval
-            f_xl = self.func(xl)
-            f_xu = self.func(xu)
-            if not isinstance(f_xl, D): 
-                f_xl = D(f_xl)
-            if not isinstance(f_xu, D): 
-                f_xu = D(f_xu)
+            # f_xl = self.func(xl)
+            # f_xu = self.func(xu)
+            f_xl = self.func_guard(xl, f)
+            f_xu = self.func_guard(xu, f)
+            # if not isinstance(f_xl, D): 
+            #     f_xl = D(f_xl)
+            # if not isinstance(f_xu, D): 
+            #     f_xu = D(f_xu)
             
             if f_xl * f_xu > D(0):
                 self.result.error_message = (

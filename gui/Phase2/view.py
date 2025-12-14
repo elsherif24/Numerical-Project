@@ -928,8 +928,13 @@ class Phase2View:
         For Fixed Point, also plots g(x) and y=x line.
         """
         try:
-            func = parse_equation(equation)
-            
+            # func = parse_equation(equation)
+            import sympy as sp
+
+            equation_str = equation.replace("^", "**")
+            x = sp.symbols("x")
+            expr = sp.sympify(equation_str)
+            func = sp.lambdify(x, expr, "math")
             # Generate x values
             margin = (xu - xl) * 0.2
             x_min = xl - margin
@@ -937,8 +942,13 @@ class Phase2View:
             x_vals = np.linspace(x_min, x_max, 500)
             
             # Calculate y values for f(x)
-            y_vals = [float(func(x)) for x in x_vals]
-            
+            # y_vals = [float(func(x)) for x in x_vals]
+            y_vals = []
+            for x_val in x_vals:
+              try:
+                y_vals.append(float(func(x_val)))
+              except:
+                y_vals.append(np.nan)
             # Clear and create new plot
             self.plot_figure.clear()
             
@@ -973,9 +983,18 @@ class Phase2View:
             # ax.axvline(x=0, color='white', linestyle='--', linewidth=1, alpha=0.5)
             if method == "Fixed Point" and g_equation:
                 try:
-                    g_func = parse_equation(g_equation)
-                    g_vals = [float(g_func(x)) for x in x_vals]
-                    
+                    # g_func = parse_equation(g_equation)
+                    # g_vals = [float(g_func(x)) for x in x_vals]
+                    g_equation_str = g_equation.replace("^", "**")
+                    g_expr = sp.sympify(g_equation_str)
+                    g_func = sp.lambdify(x, g_expr, "math")
+                
+                    g_vals = []
+                    for x_val in x_vals:
+                      try:
+                        g_vals.append(float(g_func(x_val)))
+                      except:
+                        g_vals.append(np.nan)
                     # Create two subplots side by side
                     ax1 = self.plot_figure.add_subplot(121)  # Left plot
                     ax2 = self.plot_figure.add_subplot(122)  # Right plot
