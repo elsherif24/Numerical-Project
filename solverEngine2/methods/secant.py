@@ -72,6 +72,7 @@ class SecantMethod(BaseRootFindingMethod):
                 if i > 0:
                     if not x_next.isNearZero():
                         ea = abs((x_next - x1) / x_next)
+                        significant_digits = self.calculate_significant_digits(ea)
                     else:
                         ea = float('inf')
                     
@@ -98,7 +99,8 @@ class SecantMethod(BaseRootFindingMethod):
                             'type': 'converged',
                             'message': 'f(xr) is near zero. Root found.',
                             'xr': str(x1),
-                            'f_xr': str(f_x1)
+                            'f_xr': str(f_x1),
+                            'significant_digits': significant_digits
                         })
                     self.result.steps = steps
                     return self.finalize()
@@ -122,6 +124,7 @@ class SecantMethod(BaseRootFindingMethod):
             self.result.converged = False
             self.result.f_root = float(f_xnext)
             self.result.steps = steps
+            self.result.significant_digits = significant_digits if significant_digits else None
             self.result.error_message = "Maximum iterations reached without convergence"
             
             
