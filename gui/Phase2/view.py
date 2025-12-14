@@ -1312,54 +1312,68 @@ class Phase2View:
     def display_result_modified_newton(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
 
-        self.output_text.insert("end", "="*70 + "\n")
+        sep = "=" * 80
+        sub_sep = "-" * 80
+
+        self.output_text.insert("end", f"{sep}\n")
         self.output_text.insert("end", "MODIFIED NEWTON–RAPHSON METHOD RESULTS\n")
-        self.output_text.insert("end", "="*70 + "\n\n")
+        self.output_text.insert("end", f"{sep}\n\n")
 
         if result.error_message:
-            self.output_text.insert("end", f"⚠ Warning: {result.error_message}\n\n")
+            self.output_text.insert("end", f"⚠  Warning: {result.error_message}\n\n")
 
         if result.root is not None:
             sig_figs = get_sig_figs()
 
-            self.output_text.insert("end", f"Approximate Root: {result.root}\n")
-            self.output_text.insert("end", f"Function value at root f(xr): {result.f_root}\n")
-            self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
-            self.output_text.insert("end", f"Approximate Relative Error: {result.approximate_error}\n")
-            self.output_text.insert("end", f"Execution Time: {result.execution_time:.6}\n")
-            self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
-            self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
+            self.output_text.insert("end", f"Approximate Root (xr)        : {result.root}\n")
+            self.output_text.insert("end", f"f(xr)                       : {result.f_root}\n")
+            self.output_text.insert("end", f"Iterations                  : {result.iterations}\n")
+            self.output_text.insert("end", f"Approx. Relative Error      : {result.approximate_error}\n")
+            self.output_text.insert("end", f"Execution Time              : {result.execution_time:.6}\n")
+            self.output_text.insert("end", f"Significant Figures         : {sig_figs}\n")
+            self.output_text.insert(
+                "end",
+                f"Status                      : "
+                f"{'✓ Converged' if result.converged else '✗ Did not converge'}\n"
+            )
 
             if result.steps:
-                self.output_text.insert("end", "\n" + "="*70 + "\n")
-                self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n")
-                self.output_text.insert("end", "="*70 + "\n\n")
+                self.output_text.insert("end", f"\n{sep}\n")
+                self.output_text.insert("end", "STEP-BY-STEP ITERATIONS\n")
+                self.output_text.insert("end", f"{sep}\n\n")
 
-                # Table header
-                self.output_text.insert(
-                    "end",
-                    f"{'Iter':<6} {'Xi':<15} {'f(Xi)':<15} {'df(Xi)':<15} {'mf/df':<12} {'Xi+1':<15} {'Error':<15}\n"
-                )
-                self.output_text.insert("end", "-"*100 + "\n")
+                headers = ["Iter", "Xi", "fx", "dfx", "mf/df", "Xi+1", "Error"]
+                col_widths = [6, 14, 14, 14, 14, 14, 14]
+
+                header_row = "".join(f"{h:<{w}}" for h, w in zip(headers, col_widths))
+                self.output_text.insert("end", header_row + "\n")
+                self.output_text.insert("end", sub_sep + "\n")
 
                 for step in result.steps:
                     if step["type"] == "iteration":
-                        self.output_text.insert(
-                            "end",
-                            f"{step['iteration']:<6} "
-                            f"{step['xi']:<15} "
-                            f"{step['f(xi)']:<15} "
-                            f"{step['df(xi)']:<15} "
-                            f"{step['mf(xi)/df(xi)']:<12} "
-                            f"{step['xi+1']:<15} "
-                            f"{step['error']:<15}\n"
+                        row = "".join(
+                            f"{step[k]:<{w}}"
+                            for k, w in zip(
+                                [
+                                    "iteration",
+                                    "xi",
+                                    "f(xi)",
+                                    "df(xi)",
+                                    "mf(xi)/df(xi)",
+                                    "xi+1",
+                                    "error",
+                                ],
+                                col_widths,
+                            )
                         )
+                        self.output_text.insert("end", row + "\n")
+
                     elif step["type"] == "converged":
-                        self.output_text.insert("end", f"\n{step['message']}\n")
-                        if 'xr' in step:
-                            self.output_text.insert("end", f"Final xr: {step['xr']}\n")
-                        if 'f_xr' in step:
-                            self.output_text.insert("end", f"f(xr): {step['f_xr']}\n")
+                        self.output_text.insert("end", f"\n✓ {step['message']}\n")
+                        if "xr" in step:
+                            self.output_text.insert("end", f"Final xr : {step['xr']}\n")
+                        if "f_xr" in step:
+                            self.output_text.insert("end", f"f(xr)    : {step['f_xr']}\n")
 
     def display_result_secant(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
