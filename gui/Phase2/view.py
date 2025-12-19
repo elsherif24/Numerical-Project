@@ -8,6 +8,7 @@ from sympy import Abs
 from solverEngine2.base.equation_parser import parse_equation
 from solverEngine2.base.data_classes import RootFinderResult
 from D import D, get_sig_figs
+import math, decimal
 
 
 class Phase2View:
@@ -931,70 +932,70 @@ class Phase2View:
                     self.output_text.insert("end", f"Significant digits: Perfect accuracy\n")
                 else:
                     self.output_text.insert("end", f"Significant digits: {sig_dig_val}\n")
+                    
+
+
     def display_result_newton(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
 
-        self.output_text.insert("end", "="*70 + "\n")
-        self.output_text.insert("end", "NEWTON–RAPHSON METHOD RESULTS\n")
-        self.output_text.insert("end", "="*70 + "\n\n")
+        sep = "=" * 80
+        sub_sep = "-" * 80
+
+        self.output_text.insert("end", f"{sep}\n")
+        self.output_text.insert("end", "NEWTON-RAPHSON METHOD RESULTS\n")
+        self.output_text.insert("end", f"{sep}\n\n")
 
         if result.error_message:
-            self.output_text.insert("end", f"⚠ Warning: {result.error_message}\n\n")
+            self.output_text.insert("end", f"⚠  Warning: {result.error_message}\n\n")
 
         if result.root is not None:
+            sig_figs = result.significant_digits if result.significant_digits is not None else 'N/A'
 
-            sig_figs = get_sig_figs()
-            root_d = D(result.root)
-            f_root_d = D(result.f_root)
-            
-            self.output_text.insert("end", f"Approximate Root: {root_d}\n")
-            self.output_text.insert("end", f"Function value at root f(xr): {f_root_d}\n")
-            self.output_text.insert("end", f"Number of Iterations: {result.iterations}\n")
-            self.output_text.insert("end", f"Approximate Relative Error: {result.approximate_error}%\n")
-            self.output_text.insert("end", f"Execution Time: {result.execution_time:.6} seconds\n")
-            self.output_text.insert("end", f"Significant Figures: {sig_figs}\n")
-            self.output_text.insert("end", f"Status: {'✓ Converged' if result.converged else '✗ Did not converge'}\n")
+            def safe_error_display(value):
+                try:
+                    v = float(value)
+                    if math.isfinite(v):
+                        return f"{v * 100:.6f}"
+                    else:
+                        return value
+                except:
+                    return value
+
+            self.output_text.insert("end", f"Approximate Root (xr)        : {result.root}\n")
+            self.output_text.insert("end", f"f(xr)                       : {result.f_root}\n")
+            self.output_text.insert("end", f"Iterations                  : {result.iterations}\n")
+            self.output_text.insert("end", f"Approx. Relative Error      : {safe_error_display(result.approximate_error)}\n")
+            self.output_text.insert("end", f"Execution Time              : {result.execution_time:.6}\n")
+            self.output_text.insert("end", f"Significant Figures         : {sig_figs}\n")
+            self.output_text.insert(
+                "end",
+                f"Status                      : "
+                f"{'✓ Converged' if result.converged else '✗ Did not converge'}\n"
+            )
 
             if result.steps:
-                self.output_text.insert("end", "\n" + "="*70 + "\n")
-                self.output_text.insert("end", "STEP-BY-STEP SOLUTION\n")
-                self.output_text.insert("end", "="*70 + "\n\n")
-
-                col_width = max(15, sig_figs + 7)
-
-                # Table header
-                self.output_text.insert(
-                    "end",
-                    f"{'Iter':<6} {'Xi':<{col_width}} {'f(Xi)':<{col_width}} {'df(Xi)':<{col_width}} {'Xi+1':<{col_width}} {'Error %':<15}\n"
-                )
-                self.output_text.insert("end", "-"*100 + "\n")
+                self.output_text.insert("end", f"\n{sep}\nSTEP-BY-STEP ITERATIONS\n{sep}\n\n")
+                headers = ["Iter", "Xi", "f(Xi)", "f'(Xi)", "Xi+1", "Error"]
+                col_widths = [6, 14, 14, 14, 14, 14]
+                header_row = "".join(f"{h:<{w}}" for h, w in zip(headers, col_widths))
+                self.output_text.insert("end", header_row + "\n")
+                self.output_text.insert("end", sub_sep + "\n")
 
                 for step in result.steps:
                     if step["type"] == "iteration":
-                        xi = step['xi']
-                        fxi = step['f(xi)']
-                        dfxi = step['df(xi)']
-                        xi1 = step['xi+1']
-                        error_val = step['error']
-                        error_str = f"{error_val}" if error_val is not None else "N/A"
-
-                        self.output_text.insert(
-                            "end",
-                            f"{step['iteration']:<6} "
-                            f"{xi:<{col_width}} "
-                            f"{fxi:<{col_width}} "
-                            f"{dfxi:<{col_width}} "
-                            f"{xi1:<{col_width}} "
-                            f"{error_str:<15}\n"
+                        row = "".join(
+                            f"{(safe_error_display(step[k]) if k == 'error' else step[k]):<{w}}"
+                            for k, w in zip(["iteration", "xi", "f(xi)", "df(xi)", "xi+1", "error"], col_widths)
                         )
+                        self.output_text.insert("end", row + "\n")
                     elif step["type"] == "converged":
-                        self.output_text.insert("end", f"\n{step['message']}\n")
-                        if 'xr' in step:
-                            xr_val = float(step['xr']) if isinstance(step['xr'], D) else step['xr']
-                            self.output_text.insert("end", f"Final xr: {xr_val}\n")
-                        if 'f_xr' in step:
-                            fxr_val = float(step['f_xr']) if isinstance(step['f_xr'], D) else step['f_xr']
-                            self.output_text.insert("end", f"f(xr): {fxr_val}\n")
+                        self.output_text.insert("end", f"\n✓ {step['message']}\n")
+                        if "xr" in step:
+                            self.output_text.insert("end", f"Final xr : {step['xr']}\n")
+                        if "f_xr" in step:
+                            self.output_text.insert("end", f"f(xr)    : {step['f_xr']}\n")
+                    elif step["type"] == "warning":
+                        self.output_text.insert("end", f"\n⚠ {step['message']}\n")
 
 
     def display_result_modified_newton(self, result: RootFinderResult):
@@ -1011,12 +1012,22 @@ class Phase2View:
             self.output_text.insert("end", f"⚠  Warning: {result.error_message}\n\n")
 
         if result.root is not None:
-            sig_figs = get_sig_figs()
+            sig_figs = result.significant_digits if result.significant_digits is not None else 'N/A'
+
+            def safe_error_display(value):
+                try:
+                    v = float(value)
+                    if math.isfinite(v):
+                        return f"{v * 100:.6f}"
+                    else:
+                        return value
+                except:
+                    return value
 
             self.output_text.insert("end", f"Approximate Root (xr)        : {result.root}\n")
             self.output_text.insert("end", f"f(xr)                       : {result.f_root}\n")
             self.output_text.insert("end", f"Iterations                  : {result.iterations}\n")
-            self.output_text.insert("end", f"Approx. Relative Error      : {result.approximate_error}\n")
+            self.output_text.insert("end", f"Approx. Relative Error      : {safe_error_display(result.approximate_error)}\n")
             self.output_text.insert("end", f"Execution Time              : {result.execution_time:.6}\n")
             self.output_text.insert("end", f"Significant Figures         : {sig_figs}\n")
             self.output_text.insert(
@@ -1026,13 +1037,9 @@ class Phase2View:
             )
 
             if result.steps:
-                self.output_text.insert("end", f"\n{sep}\n")
-                self.output_text.insert("end", "STEP-BY-STEP ITERATIONS\n")
-                self.output_text.insert("end", f"{sep}\n\n")
-
+                self.output_text.insert("end", f"\n{sep}\nSTEP-BY-STEP ITERATIONS\n{sep}\n\n")
                 headers = ["Iter", "Xi", "fx", "dfx", "mf/df", "Xi+1", "Error"]
                 col_widths = [6, 14, 14, 14, 14, 14, 14]
-
                 header_row = "".join(f"{h:<{w}}" for h, w in zip(headers, col_widths))
                 self.output_text.insert("end", header_row + "\n")
                 self.output_text.insert("end", sub_sep + "\n")
@@ -1040,28 +1047,19 @@ class Phase2View:
                 for step in result.steps:
                     if step["type"] == "iteration":
                         row = "".join(
-                            f"{step[k]:<{w}}"
-                            for k, w in zip(
-                                [
-                                    "iteration",
-                                    "xi",
-                                    "f(xi)",
-                                    "df(xi)",
-                                    "mf(xi)/df(xi)",
-                                    "xi+1",
-                                    "error",
-                                ],
-                                col_widths,
-                            )
+                            f"{(safe_error_display(step[k]) if k == 'error' else step[k]):<{w}}"
+                            for k, w in zip(["iteration", "xi", "f(xi)", "df(xi)", "mf(xi)/df(xi)", "xi+1", "error"], col_widths)
                         )
                         self.output_text.insert("end", row + "\n")
-
                     elif step["type"] == "converged":
                         self.output_text.insert("end", f"\n✓ {step['message']}\n")
                         if "xr" in step:
                             self.output_text.insert("end", f"Final xr : {step['xr']}\n")
                         if "f_xr" in step:
                             self.output_text.insert("end", f"f(xr)    : {step['f_xr']}\n")
+                    elif step["type"] == "warning":
+                        self.output_text.insert("end", f"\n⚠ {step['message']}\n")
+
 
     def display_result_secant(self, result: RootFinderResult):
         self.output_text.delete("1.0", "end")
@@ -1074,17 +1072,25 @@ class Phase2View:
         self.output_text.insert("end", f"{sep}\n\n")
 
         if result.error_message:
-            self.output_text.insert(
-                "end", f"⚠  Warning: {result.error_message}\n\n"
-            )
+            self.output_text.insert("end", f"⚠  Warning: {result.error_message}\n\n")
 
         if result.root is not None:
-            sig_figs = get_sig_figs()
+            sig_figs = result.significant_digits if result.significant_digits is not None else 'N/A'
+
+            def safe_error_display(value):
+                try:
+                    v = float(value)
+                    if math.isfinite(v):
+                        return f"{v * 100:.6f}"
+                    else:
+                        return value
+                except:
+                    return value
 
             self.output_text.insert("end", f"Approximate Root (xr)        : {result.root}\n")
             self.output_text.insert("end", f"f(xr)                       : {result.f_root}\n")
             self.output_text.insert("end", f"Iterations                  : {result.iterations}\n")
-            self.output_text.insert("end", f"Approx. Relative Error      : {result.approximate_error}\n")
+            self.output_text.insert("end", f"Approx. Relative Error      : {safe_error_display(result.approximate_error)}\n")
             self.output_text.insert("end", f"Execution Time              : {result.execution_time:.6}\n")
             self.output_text.insert("end", f"Significant Figures         : {sig_figs}\n")
             self.output_text.insert(
@@ -1094,14 +1100,9 @@ class Phase2View:
             )
 
             if result.steps:
-                self.output_text.insert("end", f"\n{sep}\n")
-                self.output_text.insert("end", "STEP-BY-STEP ITERATIONS\n")
-                self.output_text.insert("end", f"{sep}\n\n")
-
+                self.output_text.insert("end", f"\n{sep}\nSTEP-BY-STEP ITERATIONS\n{sep}\n\n")
                 headers = ["Iter", "Xi-1", "Xi", "f(xi)Δx / Δf", "Xi+1", "Error"]
                 col_widths = [6, 14, 14, 16, 14, 14]
-
-                # Header row
                 header_row = "".join(f"{h:<{w}}" for h, w in zip(headers, col_widths))
                 self.output_text.insert("end", header_row + "\n")
                 self.output_text.insert("end", sub_sep + "\n")
@@ -1109,24 +1110,15 @@ class Phase2View:
                 for step in result.steps:
                     if step["type"] == "iteration":
                         row = "".join(
-                            f"{step[k]:<{w}}"
-                            for k, w in zip(
-                                [
-                                    "iteration",
-                                    "xi-1",
-                                    "xi",
-                                    "f(xi)Δx / Δf",
-                                    "xi+1",
-                                    "error",
-                                ],
-                                col_widths,
-                            )
+                            f"{(safe_error_display(step[k]) if k == 'error' else step[k]):<{w}}"
+                            for k, w in zip(["iteration", "xi-1", "xi", "f(xi)Δx / Δf", "xi+1", "error"], col_widths)
                         )
                         self.output_text.insert("end", row + "\n")
-
                     elif step["type"] == "converged":
                         self.output_text.insert("end", f"\n✓ {step['message']}\n")
                         if "xr" in step:
                             self.output_text.insert("end", f"Final xr : {step['xr']}\n")
                         if "f_xr" in step:
                             self.output_text.insert("end", f"f(xr)    : {step['f_xr']}\n")
+                    elif step["type"] == "warning":
+                        self.output_text.insert("end", f"\n⚠ {step['message']}\n")
