@@ -66,6 +66,9 @@ class BaseRootFindingMethod(ABC):
             # Formula: m ≤ 2 - log₁₀(0.5 × εₐ)
             ea_percent = ea * 100
             m = 2 - math.log10( ea_percent/0.5)
-            return math.floor(m)  # Round down to get "at least" correct digits
+            si = math.floor(m) 
+            if(si < 0):
+                si =0
+            return si   # Round down to get "at least" correct digits
         except (ValueError, OverflowError):
             return 0

@@ -8,28 +8,46 @@ import sympy as sp
 
 class FalsePositionMethod(BaseRootFindingMethod):
     def make_function(self, equation_str):
-    #    equation_str = equation_str.replace("^", "**")
-    #    x = sp.symbols("x")
 
-    #    expr = sp.sympify(
-    #     equation_str,
-    #     locals={"real_root": sp.real_root}
-    # )
        equation_str = equation_str.replace("^", "**")
        x = sp.symbols("x", real=True)
+       plot_locals = {
+    "x": x,
 
+    # Constants
+    "e": sp.E,
+    "pi": sp.pi,
+
+    # Exponentials
+    "exp": sp.exp,
+
+    # Trigonometric
+    "sin": sp.sin,
+    "cos": sp.cos,
+    "tan": sp.tan,
+
+    # Logarithms
+    "ln": sp.log,
+    "log": sp.log,        # natural log
+    "log10": sp.log,      # user writes log10(x)
+
+    # Roots
+    "sqrt": sp.sqrt,
+
+    # Absolute & sign
+    "abs": sp.Abs,
+    "sign": sp.sign,
+
+    # Power & real root
+    "pow": sp.Pow,
+    "real_root": sp.real_root
+}
        expr = sp.sympify(
         equation_str,
-        locals={"real_root": sp.real_root}
+        locals=plot_locals
     )
 
-    # Automatically replace fractional powers x**(1/3)
-    #    expr = expr.replace(
-    #     lambda e: isinstance(e, sp.Pow)
-    #               and e.exp.is_Rational
-    #               and e.exp.q % 2 == 1,
-    #     lambda e: sp.real_root(e.base, e.exp.q)
-    # )
+
        expr = expr.replace(
         lambda e: (
         isinstance(e, sp.Pow)
@@ -43,14 +61,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
             )
          )
        f_numeric = sp.lambdify(x, expr, modules=["math"])
-    #    def f(val):
-    #      res = expr.subs(x, val).evalf()
-    #      if res.is_real:
-    #         return float(res)
-    #      raise ValueError("Complex value encountered")
 
-    #    return f
-        
        def f(val):
         try:
             res = f_numeric(val)
@@ -62,26 +73,13 @@ class FalsePositionMethod(BaseRootFindingMethod):
 
        return f
     def func_guard(self, x, f):
-        # if not isinstance(x, D): 
-        #     x = D(x)
+
         try:
             x_float = float(x)
-            print(x_float)
             result = f(x_float)
-            print(result)
-            # SymPy lambdify expects float
-            # realpart = float(sp.re(result))
-            # imagpart = float(sp.im(result))
-            
-            # print (result)
-            # print (realpart)
-            # print (imagpart)
+
             if isinstance(result,complex):
-                # print (result.imag)
-                # if abs(imagpart)< 1e-12:
-                
-                    # return D(realpart)
-                # else:
+
                      raise ValueError("Complex value encountered")
                     
                
@@ -121,23 +119,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
             xu = D(params.xu)
             epsilon = D(params.epsilon)
             
-            # Calculate initial function values
-            # f_xl = self.func(xl)
-            # f_xu = self.func(xu)
-            # if not isinstance(f_xl, D): 
-            #     f_xl = D(f_xl)
-            # if not isinstance(f_xu, D): 
-            #     f_xu = D(f_xu)
-            
-            # Check if root exists in interval (Bracketing condition)
-            # if f_xl * f_xu > D(0):
-            #     self.result.error_message = (
-            #         f"No root exists in interval [{xl}, {xu}].\n"
-            #         f"f({xl}) = {f_xl}\n"
-            #         f"f({xu}) = {f_xu}\n"
-            #         f"Both values have the same sign."
-            #     )
-            #     return self.result
+
             if float(f_xl) * float(f_xu) > 0:
                 self.result.error_message = (
                     f"No root exists in interval [{xl}, {xu}].\n"
@@ -183,8 +165,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                 # Calculate approximate relative error
                 if xr_prev is not None:
                     if xr != D(0):
-                        # ea = float(abs((xr - xr_prev) / xr) * D(100))
-                        ea = float(abs(xr - xr_prev  / xr))
+                        ea = float(abs((xr - xr_prev)  / xr))
                         significant_digits = self.calculate_significant_digits(ea)  # Inherited method
 
                     else:
@@ -240,7 +221,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
                     if params.step_by_step:
                         steps.append({
                             'type': 'converged',
-                            'message': f'Approximate error ({ea:.6f}%) below tolerance ({float(params.epsilon):.6f}%)',
+                            'message': f'Approximate error ({ea:.6f}) below tolerance ({float(params.epsilon):.6f})',
                             'xr': str(xr),
                             'f_xr': str(f_xr),
                             'iterations': i,
