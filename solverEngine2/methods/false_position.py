@@ -108,13 +108,18 @@ class FalsePositionMethod(BaseRootFindingMethod):
         
         try:
             f = self.make_function(params.equation)
-
+            try:
             # Convert to D objects for significant figure handling
-            xl_float = float(params.xl)
-            xu_float = float(params.xu)
+              xl_float = float(params.xl)
+              xu_float = float(params.xu)
+              f_xl = self.func_guard(xl_float, f)
+              f_xu = self.func_guard(xu_float, f)
+            except Exception as e:
+                self.result.error_message = f"Error evaluating initial points: {str(e)}"
+                self.result.steps = steps 
+                return self.finalize()
             epsilon_float = float(params.epsilon)
-            f_xl = self.func_guard(xl_float, f)
-            f_xu = self.func_guard(xu_float, f)
+
             xl = D(params.xl)
             xu = D(params.xu)
             epsilon = D(params.epsilon)
@@ -144,6 +149,7 @@ class FalsePositionMethod(BaseRootFindingMethod):
             ea = float('inf')
             xr = None
             significant_digits = None
+            f_xr = None
             # Main iteration loop
             for i in range(1, params.max_iterations + 1):
                 # False Position formula: xr = (xl*f(xu) - xu*f(xl)) / (f(xu) - f(xl))
@@ -153,15 +159,40 @@ class FalsePositionMethod(BaseRootFindingMethod):
                 
                 # Avoid division by zero
                 if denominator.isNearZero():
-                    self.result.error_message = "Division by zero in false position formula"
-                    return self.result
+                    if params.step_by_step:
+                        steps.append({
+                            'type': 'error',
+                            'message': f'Division by zero at iteration {i}: denominator f(xu)-f(xl) = {denominator} ≈ 0',
+                            'iteration': i,
+                            'xl': str(xl),
+                            'xu': str(xu),
+                            'f_xl': str(f_xl),
+                            'f_xu': str(f_xu),
+                            'method': 'False Position'
+                        })
+                    self.result.error_message = f"Division by zero at iteration {i}"
+                    
+                    # Record partial results
+                    self.result.root = float(xr) if xr is not None else None
+                    self.result.f_root = float(f_xr) if 'f_xr' in locals() else None
+                    self.result.iterations = i - 1 if i > 1 else 0
+                    self.result.approximate_error = ea if ea != float('inf') else 0.0
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+                    self.result.converged = False
+                    self.result.steps = steps
+                    return self.finalize()    
                 
                 xr = numerator / denominator
                 # f_xr = self.func(xr)
-                f_xr = self.func_guard(float(xr), f)
-                if not isinstance(f_xr, D): 
+                try:
+                  f_xr = self.func_guard(float(xr), f)
+                  if not isinstance(f_xr, D): 
                     f_xr = D(f_xr)
-                
+                except Exception as e:
+                    self.result.error_message = f"Error evaluating f(x) at iteration {i}: {str(e)}"
+                    self.result.steps = steps
+                    return self.finalize()
+                    
                 # Calculate approximate relative error
                 if xr_prev is not None:
                     if xr != D(0):
@@ -265,8 +296,10 @@ class FalsePositionMethod(BaseRootFindingMethod):
             self.result.steps = steps
             self.result.error_message = "Maximum iterations reached without convergence"
         except ZeroDivisionError:
-            self.result.error_message = "Division by zero occurred in false position calculation"
+            self.result.error_message = f"Division by zero occurred: {str(e)}"
+            self.result.steps = steps
         except Exception as e:
             self.result.error_message = f"Error in False Position method: {str(e)}"
+            self.result.steps = steps
         
         return self.finalize()

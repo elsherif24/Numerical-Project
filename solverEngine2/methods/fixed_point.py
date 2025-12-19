@@ -229,6 +229,7 @@ class FixedPointMethod(BaseRootFindingMethod):
             iteration_count = 0
             significant_digits = None
             # Main iteration loop
+            f_xr = None
             for i in range(1, params.max_iterations + 1):
                 iteration_count = i
                 xr_prev = xr
@@ -256,11 +257,22 @@ class FixedPointMethod(BaseRootFindingMethod):
                        self.result.steps = steps
                        return self.finalize()
                     else:
-                         self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
-                         break
+                        # Handle division by zero and other ValueErrors
+                        self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
+                        self.result.root = float(xr_prev) if xr_prev is not None else float(x0)
+                        self.result.iterations = i - 1 if i > 1 else 0
+                        self.result.converged = False
+                        self.result.significant_digits = significant_digits if xr_prev is not None else None
+                        self.result.steps = steps
+                        return self.finalize()
                 except Exception as e:
-                         self.result.error_message = f"Error evaluating g(x) at iteration {i}: {str(e)}"
-                         break
+                    self.result.error_message = f"Unexpected error at iteration {i}: {str(e)}"
+                    self.result.root = float(xr_prev) if xr_prev is not None else float(x0)
+                    self.result.iterations = i - 1 if i > 1 else 0
+                    self.result.converged = False
+                    self.result.significant_digits = significant_digits if xr_prev is not None else None
+                    self.result.steps = steps
+                    return self.finalize()
 
                 if xr_prev is not None:
                     if xr != D(0):
@@ -364,9 +376,9 @@ class FixedPointMethod(BaseRootFindingMethod):
 
                 })
             
-        except ZeroDivisionError:
-            self.result.error_message = "Division by zero occurred in Fixed Point calculation"
+       
         except Exception as e:
             self.result.error_message = f"Error in Fixed Point method: {str(e)}"
+            self.result.steps = steps
         
         return self.finalize()
